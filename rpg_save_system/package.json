@@ -1,0 +1,7 @@
+{
+  "name": "rpg-save-system",
+  "version": "1.0.0",
+  "description": "RPG Backend Save System",
+  "main": "index.js",
+  "dependencies": {}
+}

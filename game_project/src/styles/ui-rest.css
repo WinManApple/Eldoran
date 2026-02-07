@@ -1,0 +1,330 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* =========================================
+   8. 休息处系统 (Rest System)
+   ========================================= */
+
+:root {
+    --rest-bg-overlay: rgba(10, 8, 5, 0.92);
+    --rest-panel-bg: rgba(25, 20, 15, 0.85);
+    --rest-amber: #ff9f43;    /* 琥珀色 */
+    --rest-gold: #f1c40f;     /* 黄金色 */
+    --rest-hp: #2ecc71;       /* HP 绿色 */
+    --rest-mp: #3498db;       /* MP 蓝色 */
+    --rest-border: rgba(255, 159, 67, 0.3);
+}
+
+/* 1. 全屏背景 */
+.rest-backdrop {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle at center, rgba(60, 40, 20, 0.8) 0%, #0a0805 100%);
+    z-index: 3000;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(8px);
+    animation: fadeIn 0.6s ease-out;
+    
+    /* 🟢 关键：阻挡点击 */
+    pointer-events: auto !important;
+    
+    /* 🟢 新增：防止滚动传导到底层 */
+    overscroll-behavior: contain;
+}
+
+/* 2. 主容器 */
+.rest-container {
+    width: 1000px;
+    height: 700px;
+    background: var(--rest-panel-bg);
+    border: 1px solid var(--rest-border);
+    box-shadow: 0 0 40px rgba(255, 159, 67, 0.15);
+    display: flex;
+    flex-direction: column;
+    border-radius: 8px;
+    overflow: hidden;
+    position: relative;
+}
+
+/* 3. 顶部栏 */
+.rest-header {
+    height: 80px;
+    padding: 0 40px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid var(--rest-border);
+}
+
+.location-box {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+.location-box .icon { font-size: 1.8rem; animation: fire-flicker 2s infinite; }
+.location-name { font-size: 1.4rem; color: var(--rest-amber); font-family: 'Cinzel', serif; }
+
+.gold-display { font-size: 1.1rem; color: var(--rest-gold); }
+
+/* 4. 中间内容区 (双栏) */
+.rest-main {
+    flex: 1;
+    display: flex;
+    padding: 30px;
+    gap: 30px;
+}
+
+.rest-panel {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 20px;
+    display: flex;
+    flex-direction: column;
+}
+
+.panel-title {
+    font-size: 1.2rem;
+    color: #eee;
+    margin-bottom: 20px;
+    padding-left: 10px;
+    border-left: 4px solid var(--rest-amber);
+}
+
+/* 左侧：队伍状态列表 */
+.party-status-list {
+    flex: 1;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.member-status-card {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 15px;
+    border-radius: 4px;
+}
+
+.member-info {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 10px;
+}
+.member-name { font-weight: bold; color: #fff; }
+.member-level { color: var(--rest-dim); font-size: 0.8rem; }
+
+/* 状态条 */
+.bar-group { margin-bottom: 8px; }
+.bar-label { font-size: 0.75rem; color: #aaa; margin-bottom: 4px; }
+.bar-track {
+    height: 6px;
+    background: #111;
+    border-radius: 3px;
+    overflow: hidden;
+}
+.bar-fill { height: 100%; transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1); }
+.bar-track.hp .bar-fill { background: var(--rest-hp); box-shadow: 0 0 10px rgba(46, 204, 113, 0.3); }
+.bar-track.mp .bar-fill { background: var(--rest-mp); box-shadow: 0 0 10px rgba(52, 152, 219, 0.3); }
+
+/* 右侧：伙伴列表 */
+.companion-list {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    overflow-y: auto; /* 确保列表过长时可以滚动 */
+    padding-right: 5px; /* 留出滚动条空间 */
+}
+
+/* 🟢 [修改] 卡片样式：纯文字，支持选中态 */
+.companion-card {
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 文字居中 */
+    padding: 15px;
+    background: rgba(255, 159, 67, 0.05);
+    border: 1px solid rgba(255, 159, 67, 0.1);
+    border-radius: 6px;
+    cursor: pointer; /* 变为手型指针 */
+    transition: all 0.2s;
+}
+
+.companion-card:hover {
+    background: rgba(255, 159, 67, 0.15);
+    border-color: var(--rest-amber);
+}
+
+/* 🟢 [新增] 选中状态 */
+.companion-card.selected {
+    background: rgba(255, 159, 67, 0.6); /* 高亮背景 */
+    border-color: #fff;
+    box-shadow: 0 0 10px rgba(255, 159, 67, 0.4);
+}
+
+.companion-card.selected .comp-name {
+    color: #000; /* 选中后文字变黑，增加对比度 */
+    font-weight: bold;
+    text-shadow: none;
+}
+
+/* 🟢 [修改] 移除头像，只保留文字容器 */
+.comp-detail { 
+    display: flex; 
+    align-items: center; 
+    width: 100%;
+    justify-content: center;
+}
+
+.comp-name { 
+    font-size: 1.2rem; 
+    color: #bbb; /* 默认稍微暗淡一点 */
+    transition: color 0.2s;
+}
+
+.comp-detail { display: flex; flex-direction: column; gap: 8px; }
+.comp-name { font-size: 1.1rem; color: #fff; }
+
+/* 5. 按钮样式 */
+/* 通用交互按钮重置 */
+.ro-action-btn {
+    cursor: pointer;
+    border: none;
+    outline: none;
+    font-family: inherit;
+    user-select: none;
+    transition: all 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+    
+    /* 强制宽度占满容器 */
+    width: 100% !important; 
+    flex-shrink: 0 !important; 
+    box-sizing: border-box;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+/* --- 左侧：整备按钮 (中等尺寸) --- */
+.ro-btn-rest {
+    margin-top: 15px;      /* 间距调小 */
+    height: 60px !important; /* 🟢 [修改] 高度从 100px 减小到 60px */
+    
+    background: linear-gradient(135deg, #e67e22, #d35400);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 6px;    /* 圆角稍微调小 */
+    color: #fff;
+    box-shadow: 0 3px 8px rgba(0,0,0,0.3);
+}
+
+.ro-btn-rest .btn-content {
+    display: flex;
+    flex-direction: row; /* 🟢 [修改] 改为横向排列，更省空间 */
+    align-items: center;
+    gap: 10px;           /* 文字和金币之间的间距 */
+}
+
+/* 字体调小 */
+.ro-btn-rest .btn-text {
+    font-size: 1.2rem;   /* 🟢 [修改] 字体从 1.8rem 减小到 1.2rem */
+    font-weight: bold;
+    letter-spacing: 2px;
+    white-space: nowrap;
+}
+
+.ro-btn-rest .btn-cost {
+    font-size: 0.9rem;   /* 🟢 [修改] 字体调小 */
+    background: rgba(0,0,0,0.2);
+    padding: 2px 8px;
+    border-radius: 10px;
+    white-space: nowrap;
+}
+
+.ro-btn-rest:hover:not(:disabled) { 
+    transform: translateY(-2px); 
+    box-shadow: 0 5px 15px rgba(211, 84, 0, 0.4); 
+    filter: brightness(1.1);
+}
+.ro-btn-rest:disabled { 
+    opacity: 0.6; 
+    filter: grayscale(0.8); 
+    cursor: not-allowed; 
+}
+
+/* --- 右侧：亲密互动按钮 (中等尺寸) --- */
+.ro-btn-interact {
+    margin-top: 15px; 
+    height: 50px !important; /* 🟢 [修改] 高度从 80px 减小到 50px */
+    
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    border: 1px solid rgba(255, 255, 255, 0.2) !important;
+    border-radius: 6px;
+    color: #fff;
+    font-size: 1.1rem;      /* 🟢 [修改] 字体从 1.5rem 减小到 1.1rem */
+    font-weight: bold;
+    letter-spacing: 1px;
+    white-space: nowrap;
+    box-shadow: 0 3px 10px rgba(142, 68, 173, 0.3);
+}
+
+.ro-btn-interact:hover:not(:disabled) {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(142, 68, 173, 0.5);
+    background: linear-gradient(135deg, #a569bd, #9b59b6);
+}
+
+.ro-btn-interact:disabled {
+    background: #444;
+    color: #888;
+    border-color: #555 !important;
+    cursor: not-allowed;
+    box-shadow: none;
+}
+
+/* --- 底部：离开按钮 (紧凑胶囊) --- */
+.ro-btn-leave {
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #666 !important;
+    color: #ccc;
+    
+    /* 🟢 [修改] 尺寸大幅缩小 */
+    padding: 8px 40px;      
+    font-size: 1rem;
+    
+    border-radius: 30px;
+    width: auto !important;
+    min-width: 120px;       /* 最小宽度减小 */
+}
+.ro-btn-leave:hover {
+    background: #c0392b; 
+    color: #fff;
+    border-color: #e74c3c !important;
+}
+
+/* 6. 特效动画 */
+@keyframes fire-flicker {
+    0%, 100% { transform: scale(1); filter: drop-shadow(0 0 5px orange); }
+    50% { transform: scale(1.1); filter: drop-shadow(0 0 15px red); }
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+}

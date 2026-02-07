@@ -1,0 +1,591 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-history.css */
+
+/* =========================================
+   容器与基础布局
+   ========================================= */
+.hm-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background-color: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 2000;
+    
+    /* 🟢 [新增] 关键修复：开启鼠标交互，防止点击穿透 */
+    pointer-events: auto; 
+
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-family: "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    color: #e0e0e0;
+}
+
+.hm-window {
+    width: 90vw;
+    height: 90vh;
+    background-color: #1a1a1a;
+    border: 1px solid #444;
+    border-radius: 8px;
+    box-shadow: 0 0 30px rgba(0, 0, 0, 0.8);
+    display: flex;
+    overflow: hidden; /* 防止圆角溢出 */
+}
+
+/* =========================================
+   左侧侧边栏 (Sidebar)
+   ========================================= */
+.hm-sidebar {
+    width: 260px;
+    background-color: #121212;
+    border-right: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+}
+
+.hm-sidebar-header {
+    padding: 20px;
+    background-color: #0f0f0f;
+    border-bottom: 1px solid #333;
+}
+
+.hm-sidebar-header h3 {
+    margin: 0;
+    font-size: 1.2rem;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.hm-subtitle {
+    font-size: 0.8rem;
+    color: #888;
+    margin-top: 5px;
+    text-transform: uppercase;
+}
+
+.hm-channel-list {
+    flex: 1;
+    overflow-y: auto;
+    padding: 10px;
+}
+
+.hm-channel-item {
+    display: flex;
+    align-items: center;
+    padding: 10px 12px;
+    margin-bottom: 4px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.2s, color 0.2s;
+    user-select: none;
+}
+
+.hm-channel-item:hover {
+    background-color: #2a2a2a;
+}
+
+.hm-channel-item.active {
+    background-color: #3d4c53;
+    color: #4db6ac;
+    font-weight: bold;
+}
+
+.hm-channel-icon {
+    width: 24px;
+    text-align: center;
+    margin-right: 8px;
+    opacity: 0.7;
+}
+
+.hm-channel-name {
+    flex: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.hm-badge {
+    font-size: 0.7rem;
+    background: #c62828;
+    color: white;
+    padding: 2px 6px;
+    border-radius: 4px;
+    margin-left: 5px;
+}
+
+.hm-sidebar-footer {
+    padding: 15px;
+    border-top: 1px solid #333;
+    background-color: #0f0f0f;
+}
+
+/* =========================================
+   右侧内容区 (Content)
+   ========================================= */
+.hm-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    background-color: #1e1e1e;
+    min-width: 0; /* 防止 Flex 子项溢出 */
+}
+
+/* --- Tabs --- */
+.hm-tabs {
+    display: flex;
+    background-color: #252525;
+    border-bottom: 1px solid #333;
+}
+
+.hm-tab-btn {
+    padding: 15px 25px;
+    background: transparent;
+    border: none;
+    color: #aaa;
+    cursor: pointer;
+    font-size: 0.95rem;
+    position: relative;
+    transition: all 0.2s;
+}
+
+.hm-tab-btn:hover {
+    color: #fff;
+    background-color: #2a2a2a;
+}
+
+.hm-tab-btn.active {
+    color: #4db6ac;
+    background-color: #1e1e1e;
+    border-bottom: 2px solid #4db6ac;
+}
+
+.hm-tooltip {
+    display: block;
+    font-size: 0.7rem;
+    color: #666;
+    margin-top: 2px;
+}
+
+/* --- Panel Scroll Area --- */
+.hm-panel-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px;
+    position: relative;
+}
+
+.hm-panel-scroll::-webkit-scrollbar {
+    width: 8px;
+}
+.hm-panel-scroll::-webkit-scrollbar-track {
+    background: #1a1a1a;
+}
+.hm-panel-scroll::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 4px;
+}
+.hm-panel-scroll::-webkit-scrollbar-thumb:hover {
+    background: #666;
+}
+
+/* =========================================
+   通用组件与排版
+   ========================================= */
+.hm-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 10px;
+    border-bottom: 1px dashed #444;
+}
+
+.hm-toolbar.sticky {
+    position: sticky;
+    top: -20px; /* 抵消 padding */
+    background: rgba(30, 30, 30, 0.95);
+    z-index: 10;
+    padding: 10px 0;
+    margin-top: -10px;
+}
+
+.hm-info {
+    font-size: 0.85rem;
+    color: #888;
+}
+
+.hm-info-box {
+    background: #2a3b45;
+    color: #b0bec5;
+    padding: 8px 12px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    margin-bottom: 15px;
+    border-left: 3px solid #4db6ac;
+}
+
+.hm-section {
+    margin-bottom: 40px;
+}
+
+.hm-section-title {
+    margin: 0 0 15px 0;
+    color: #ddd;
+    font-size: 1.1rem;
+    border-left: 4px solid #7e57c2;
+    padding-left: 10px;
+}
+
+/* --- Cards --- */
+.hm-card {
+    background-color: #252525;
+    border: 1px solid #333;
+    border-radius: 6px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+.hm-card-visual {
+    border-left: 3px solid #ffab91; /* 橙色系 */
+}
+
+.hm-card-memory {
+    border-left: 3px solid #9fa8da; /* 蓝紫色系 */
+}
+
+.hm-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+    font-family: Consolas, monospace;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* --- Inputs & Textareas --- */
+.hm-input, .hm-input-sm, .hm-input-xs, 
+.hm-textarea-sm, .hm-textarea-md, .hm-textarea-lg {
+    background-color: #151515;
+    border: 1px solid #444;
+    color: #eee;
+    padding: 6px 10px;
+    border-radius: 4px;
+    font-family: inherit;
+    transition: border-color 0.2s;
+}
+
+.hm-input:focus, .hm-textarea-sm:focus, .hm-textarea-lg:focus {
+    outline: none;
+    border-color: #4db6ac;
+}
+
+.hm-input { width: 100%; box-sizing: border-box; }
+.hm-input-sm { width: 120px; margin-right: 5px; }
+.hm-input-xs { width: 80px; margin-right: 5px; text-align: center; }
+
+.hm-textarea-sm { width: 100%; min-height: 40px; resize: vertical; box-sizing: border-box; }
+.hm-textarea-md { width: 100%; min-height: 60px; resize: vertical; box-sizing: border-box; }
+.hm-textarea-lg { width: 100%; min-height: 120px; resize: vertical; box-sizing: border-box; line-height: 1.5; }
+
+/* --- Buttons --- */
+.hm-btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    transition: background 0.2s;
+}
+
+.hm-btn-close {
+    width: 100%;
+    background-color: #333;
+    color: #aaa;
+}
+.hm-btn-close:hover { background-color: #444; color: #fff; }
+
+.hm-btn-save {
+    background-color: #2e7d32;
+    color: white;
+    margin-right: 10px;
+}
+.hm-btn-save:hover { background-color: #388e3c; }
+
+.hm-btn-reload {
+    background-color: #c62828;
+    color: white;
+}
+.hm-btn-reload:hover { background-color: #d32f2f; }
+
+.hm-btn-dashed {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed #555;
+    color: #888;
+    padding: 8px;
+    cursor: pointer;
+    border-radius: 4px;
+    margin-top: 5px;
+}
+.hm-btn-dashed:hover {
+    border-color: #888;
+    color: #ccc;
+    background: rgba(255,255,255,0.05);
+}
+
+.hm-btn-icon {
+    background: transparent;
+    border: none;
+    cursor: pointer;
+    font-size: 1rem;
+    padding: 4px;
+    opacity: 0.6;
+}
+.hm-btn-icon:hover { opacity: 1; transform: scale(1.1); }
+.hm-btn-icon.delete:hover { filter: drop-shadow(0 0 2px red); }
+
+.hm-btn-mini {
+    background: #333;
+    border: none;
+    color: #aaa;
+    font-size: 0.7rem;
+    padding: 2px 6px;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-left: 5px;
+}
+.hm-btn-mini:hover { background: #444; color: #fff; }
+
+/* =========================================
+   特殊布局类 (Helpers)
+   ========================================= */
+.hm-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 8px;
+}
+.hm-row label, .hm-col-label {
+    width: 50px;
+    font-size: 0.85rem;
+    color: #888;
+    flex-shrink: 0;
+}
+.hm-col-content {
+    flex: 1;
+    display: flex;
+    gap: 5px;
+}
+
+.hm-flex-row {
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+}
+
+.hm-tag {
+    background: #455a64;
+    color: #cfd8dc;
+    font-size: 0.75rem;
+    padding: 4px 8px;
+    border-radius: 4px;
+    min-width: 60px;
+    text-align: center;
+    margin-top: 4px; /* Align with textarea text */
+}
+
+/* Reply List Styling */
+.hm-reply-list, .hm-reply-container {
+    margin-left: 50px;
+    padding-left: 10px;
+    border-left: 2px solid #333;
+}
+
+.hm-reply-item, .hm-reply-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 6px;
+}
+
+.hm-raw-json pre {
+    background: #111;
+    padding: 10px;
+    border-radius: 4px;
+    overflow-x: auto;
+    font-size: 0.8rem;
+    color: #81c784;
+}
+
+.hm-meta {
+    text-align: right;
+    font-size: 0.7rem;
+    color: #555;
+    margin-top: 5px;
+}
+
+.hm-empty-state {
+    text-align: center;
+    padding: 40px;
+    color: #555;
+    font-style: italic;
+}
+
+/* =========================================
+   扩展板块样式 (Extension Styles)
+   适用于: 队友记忆 & NPC 档案
+   前缀: .hm-ext-
+   ========================================= */
+
+/* --- 布局容器: 左右分栏 --- */
+.hm-ext-layout {
+    display: flex;
+    height: 100%; /* 占满父容器高度 */
+    overflow: hidden;
+}
+
+/* --- 左侧: 角色列表栏 --- */
+.hm-ext-list-side {
+    width: 220px;
+    background-color: #161616; /* 比主背景稍深 */
+    border-right: 1px solid #333;
+    display: flex;
+    flex-direction: column;
+    padding: 10px;
+    overflow-y: auto;
+    flex-shrink: 0;
+}
+
+/* 列表项卡片 */
+.hm-ext-item-card {
+    background-color: #252525;
+    border: 1px solid #333;
+    padding: 10px;
+    margin-bottom: 8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 0.9rem;
+    color: #ccc;
+    position: relative;
+    overflow: hidden;
+}
+
+.hm-ext-item-card:hover {
+    background-color: #333;
+    border-color: #555;
+    color: #fff;
+}
+
+/* 选中状态 - 队友 (绿色系) */
+.hm-tab-btn:nth-child(3).active ~ .hm-panel-scroll .hm-ext-item-card.active,
+.hm-ext-item-card.active {
+    background-color: #1b3320; /* 深绿背景 */
+    border-color: #4caf50;
+    color: #fff;
+    box-shadow: inset 3px 0 0 #4caf50; /* 左侧亮条 */
+}
+
+/* ID 标签 */
+.hm-ext-id-tag {
+    font-size: 0.65rem;
+    background: #424242;
+    padding: 1px 4px;
+    border-radius: 3px;
+    color: #aaa;
+    margin-right: 5px;
+    font-family: monospace;
+}
+
+/* --- 右侧: 编辑器主区域 --- */
+.hm-ext-editor-main {
+    flex: 1;
+    padding: 20px;
+    overflow-y: auto;
+    background-color: #1e1e1e;
+    display: flex;
+    flex-direction: column;
+}
+
+/* NPC 专用卡片 (表单区域) */
+.hm-ext-npc-card {
+    background-color: #222;
+    border: 1px solid #383838;
+    padding: 15px;
+    border-radius: 6px;
+    margin-bottom: 20px;
+}
+
+/* NPC Tab 激活时的边框色 (紫色系) */
+.hm-tab-btn:nth-child(4).active ~ .hm-panel-scroll .hm-ext-npc-card {
+    border-left: 3px solid #ab47bc;
+}
+
+/* --- 交互记录行样式 --- */
+.hm-ext-log-container {
+    margin-bottom: 20px;
+}
+
+.hm-ext-log-row {
+    display: flex;
+    align-items: flex-start;
+    margin-bottom: 10px;
+    gap: 10px;
+    background: #252525;
+    padding: 5px;
+    border-radius: 4px;
+    border: 1px solid transparent;
+    transition: border-color 0.2s;
+}
+
+.hm-ext-log-row:focus-within {
+    border-color: #555;
+    background: #2a2a2a;
+}
+
+/* --- Tab 按钮特定颜色覆盖 (Visual Guide) --- */
+
+/* 队友记忆 Tab - 绿色高亮 */
+.hm-tab-btn:nth-child(3).active {
+    color: #66bb6a;
+    border-bottom-color: #66bb6a;
+}
+
+/* NPC 档案 Tab - 紫色高亮 */
+.hm-tab-btn:nth-child(4).active {
+    color: #ab47bc;
+    border-bottom-color: #ab47bc;
+}
+
+/* --- 滚动条优化 (针对内部区域) --- */
+.hm-ext-list-side::-webkit-scrollbar,
+.hm-ext-editor-main::-webkit-scrollbar {
+    width: 6px;
+}
+.hm-ext-list-side::-webkit-scrollbar-track {
+    background: #111;
+}
+.hm-ext-list-side::-webkit-scrollbar-thumb {
+    background: #333;
+    border-radius: 3px;
+}

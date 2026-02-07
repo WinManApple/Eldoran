@@ -1,0 +1,230 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* =========================================
+   全屏菜单系统 (Full-screen Menus)
+   包含：主菜单、二级弹窗、设置面板、存档管理、暂停菜单、任务版面
+   ========================================= */
+
+/* ----------------------------------
+   A. 主菜单 (Main Menu)
+   ---------------------------------- */
+
+.main-menu {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; flex-direction: column;
+    justify-content: center; align-items: center;
+    z-index: 10;
+    pointer-events: auto; /* 允许点击 */
+}
+
+/* 标题区域 */
+.game-title {
+    text-align: center; margin-bottom: 60px;
+    text-shadow: 0 0 20px rgba(169, 119, 237, 0.6);
+}
+.main-title {
+    font-size: 24px; font-weight: 300; letter-spacing: 5px; margin: 0; color: #ddd;
+}
+.sub-title {
+    font-size: 48px; font-weight: 700; margin: 10px 0 0 0;
+    background: linear-gradient(to bottom, #fff, #9b8aff);
+    -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 4px 6px rgba(0,0,0,0.5));
+}
+
+/* 按钮容器 */
+.menu-buttons {
+    display: flex; flex-direction: column; gap: 20px; width: 300px;
+}
+
+/* 调试日志 (通常在主菜单左下角) */
+.debug-log {
+    position: fixed; bottom: 5px; left: 5px;
+    font-size: 12px; color: rgba(255,255,255,0.3); pointer-events: none;
+}
+
+/* ----------------------------------
+   B. 通用二级弹窗 (Sub Menus)
+   ---------------------------------- */
+
+.sub-menu {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    display: flex; justify-content: center; align-items: center;
+    background: rgba(0,0,0,0.8);
+    z-index: 20;
+    pointer-events: auto;
+}
+
+.panel {
+    background: #222; border: 2px solid #555; padding: 40px; border-radius: 8px;
+    text-align: center; box-shadow: 0 0 30px rgba(0,0,0,1);
+}
+
+/* ----------------------------------
+   C. 设置面板 (Settings Panel)
+   ---------------------------------- */
+
+.settings-panel {
+    width: 500px;
+    background: rgba(30, 30, 30, 0.95);
+    border: 1px solid #666;
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.8), inset 0 0 20px rgba(100, 100, 255, 0.1);
+    backdrop-filter: blur(10px);
+}
+
+.panel-title {
+    border-bottom: 1px solid #444; padding-bottom: 15px; margin-top: 0;
+    font-weight: 300; letter-spacing: 3px; color: #fff; text-shadow: 0 0 10px #aaa;
+}
+
+.setting-row { margin: 25px 0; text-align: left; pointer-events: auto; }
+.setting-row label { display: block; margin-bottom: 10px; color: #aaa; font-size: 14px; font-weight: bold; }
+
+.res-buttons { display: flex; gap: 10px; flex-wrap: wrap; }
+.panel-footer { margin-top: 40px; border-top: 1px solid #444; padding-top: 20px; }
+
+/* ----------------------------------
+   D. 存档管理系统 (Save Manager)
+   ---------------------------------- */
+
+.save-manager-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: linear-gradient(to bottom, #2C2416, #3D2E1A);
+    color: #E8DFCA; z-index: 100; overflow: hidden;
+    display: flex; flex-direction: column; pointer-events: auto;
+    z-index: 4000;
+}
+/* 背景纹理 */
+.save-manager-overlay::before {
+    content: ''; position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" width="200" height="200" opacity="0.03"><path d="M0,0 L200,200 M200,0 L0,200" stroke="%23D4AF37" stroke-width="1"/></svg>');
+    opacity: 0.3; pointer-events: none; z-index: -1;
+}
+
+.save-container {
+    max-width: 1600px; width: 90%; margin: 0 auto; padding: 20px; height: 100%;
+    display: flex; flex-direction: column;
+}
+
+/* 顶部与返回按钮 */
+.save-header {
+    display: flex; align-items: center; margin-bottom: 20px; position: relative;
+    padding: 20px 0; flex-shrink: 0; height: 80px; justify-content: center;
+}
+.save-title { position: absolute; left: 50%; transform: translateX(-50%); text-align: center; }
+.save-title h1 {
+    font-size: 2.5rem; color: #D4AF37; margin: 0; font-weight: bold; letter-spacing: 2px;
+    text-shadow: 3px 3px 0 #5D4C3A, 0 0 20px rgba(212, 175, 55, 0.5);
+}
+.save-title p { font-size: 1rem; color: #B8A98F; margin-top: 5px; }
+
+.save-back-btn {
+    position: absolute; left: 30px; top: 50%; transform: translateY(-50%);
+    background: rgba(0, 0, 0, 0.4); border: 1px solid #8A7355; color: #E8DFCA;
+    padding: 8px 15px; min-width: 80px; display: flex; align-items: center; justify-content: center; gap: 6px;
+    border-radius: 6px; font-size: 1rem; cursor: pointer; transition: all 0.3s ease; z-index: 10;
+}
+.save-back-btn:hover {
+    background: rgba(93, 76, 58, 0.6); border-color: #D4AF37; color: #fff; box-shadow: 0 0 10px rgba(212, 175, 55, 0.3);
+}
+
+/* 主布局 */
+.save-main-content { display: flex; gap: 30px; flex: 1; min-height: 0; margin-bottom: 20px; }
+
+/* 左侧：预览 */
+.save-preview-section {
+    flex: 2; display: flex; flex-direction: column; gap: 20px; overflow-y: auto; padding-right: 10px; min-height: 0;
+}
+.save-preview-section::-webkit-scrollbar { width: 6px; }
+.save-preview-section::-webkit-scrollbar-track { background: rgba(0,0,0,0.1); }
+.save-preview-section::-webkit-scrollbar-thumb { background: #5D4C3A; border-radius: 3px; }
+
+.save-preview-box {
+    width: 100%; aspect-ratio: 16/9; max-height: 35vh; background: linear-gradient(135deg, #1A1510, #2C2416);
+    border: 3px solid #5D4C3A; border-radius: 12px; overflow: hidden; position: relative;
+    display: flex; align-items: center; justify-content: center; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5); flex-shrink: 0;
+}
+.save-preview-placeholder { color: #B8A98F; text-align: center; }
+.save-preview-placeholder i { font-size: 4rem; margin-bottom: 10px; display: block; }
+
+.save-details-box {
+    background: rgba(245, 235, 216, 0.05); border: 2px solid #5D4C3A; border-radius: 12px; padding: 20px; flex: 1;
+}
+.save-details-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 15px; margin-top: 15px; }
+.save-detail-item {
+    background: rgba(45, 35, 25, 0.5); padding: 10px; border-radius: 6px; border-left: 3px solid #B08D57;
+}
+.save-detail-label { font-size: 0.8rem; color: #B8A98F; margin-bottom: 4px; }
+.save-detail-value { font-size: 1.1rem; color: #E8DFCA; font-weight: bold; }
+
+/* 右侧：列表 */
+.save-list-section { flex: 1; min-width: 350px; display: flex; flex-direction: column; }
+.save-mode-toggle {
+    display: flex; margin-bottom: 15px; background: rgba(45, 35, 25, 0.7); border-radius: 8px; padding: 5px; border: 1px solid #5D4C3A;
+}
+.save-mode-btn {
+    flex: 1; padding: 10px; background: transparent; border: none; color: #888; cursor: pointer; font-weight: bold; border-radius: 6px; transition: 0.3s;
+}
+.save-mode-btn.active { background: #5D4C3A; color: #D4AF37; box-shadow: 0 2px 10px rgba(0,0,0,0.3); }
+
+.save-scroll-container {
+    flex: 1; overflow-y: auto; background: rgba(30, 25, 20, 0.7); border: 2px solid #5D4C3A; border-radius: 10px; padding: 10px;
+}
+.save-item {
+    background: rgba(245, 235, 216, 0.05); border: 1px solid #5D4C3A; border-radius: 8px; padding: 15px;
+    margin-bottom: 10px; cursor: pointer; transition: all 0.2s; display: flex; justify-content: space-between; align-items: center;
+}
+.save-item:hover { background: rgba(245, 235, 216, 0.1); }
+.save-item.active { background: rgba(93, 76, 58, 0.6); border-color: #D4AF37; box-shadow: 0 0 10px rgba(212, 175, 55, 0.2); }
+.save-item.empty { opacity: 0.6; border-style: dashed; }
+
+.save-status-badge { font-size: 0.8rem; padding: 4px 8px; border-radius: 10px; background: #333; color: #aaa; }
+.save-item:not(.empty) .save-status-badge { background: #B08D57; color: #2C2416; }
+
+.save-actions { display: flex; justify-content: center; gap: 20px; padding-top: 10px; border-top: 1px solid #444; }
+.save-action-btn { min-width: 150px; padding: 12px; }
+
+/* ----------------------------------
+   E. 暂停菜单 (Pause Menu)
+   ---------------------------------- */
+
+.pause-menu-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85); backdrop-filter: blur(5px);
+    z-index: 1000; display: flex; justify-content: center; align-items: center; pointer-events: auto;
+}
+
+.pause-panel {
+    width: 300px; background: linear-gradient(180deg, #1a1a1a 0%, #0d0d0d 100%);
+    border: 2px solid #555; border-top-color: #d4af37; border-bottom-color: #d4af37;
+    border-radius: 8px; padding: 30px 20px; text-align: center; box-shadow: 0 10px 50px rgba(0,0,0,0.8);
+    position: relative;
+}
+.pause-panel::before {
+    content: ''; position: absolute; top: 5px; left: 5px; right: 5px; bottom: 5px; border: 1px solid rgba(255, 255, 255, 0.05); pointer-events: none;
+}
+.pause-title {
+    color: #d4af37; font-size: 2rem; margin-bottom: 30px; letter-spacing: 5px;
+    text-shadow: 0 0 10px rgba(212, 175, 55, 0.5); font-family: serif;
+}
+.pause-buttons { display: flex; flex-direction: column; gap: 15px; }
+.pause-buttons .rpg-btn { width: 100%; justify-content: center; }
+.pause-buttons .rpg-btn.danger { border-color: #8b0000; color: #ffcccc; }
+.pause-buttons .rpg-btn.danger:hover { background: #8b0000; color: white; }

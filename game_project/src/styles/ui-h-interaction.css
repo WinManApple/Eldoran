@@ -1,0 +1,854 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-h-interaction.css */
+
+/* =========================================
+   7. H 互动系统 (H-Interaction System) - Pink Neon Refactor
+   ========================================= */
+
+/* --- 基础变量定义 (粉色系) --- */
+:root {
+    --h-bg-overlay: rgba(10, 5, 10, 0.85); /* 深色背景，略带紫 */
+    --h-panel-bg: rgba(20, 10, 15, 0.95);  /* 面板背景 */
+    --h-border-color: rgba(255, 105, 180, 0.3); /* 淡粉色边框 */
+    
+    /* 核心主色 */
+    --h-pink-primary: #FF69B4; /* HotPink - 高亮/主要文本 */
+    --h-pink-deep: #FF1493;    /* DeepPink - 进度条深色/按钮激活 */
+    --h-pink-glow: rgba(255, 20, 147, 0.4); /* 光晕颜色 */
+    
+    --h-text-main: #FFF0F5;    /* LavenderBlush - 主文本 */
+    --h-text-dim: #D8BFD8;     /* Thistle - 次要文本 */
+}
+
+/* 1. 全屏遮罩 (阻止点击穿透) */
+.h-backdrop {
+    position: fixed;
+    top: 0; left: 0; width: 100%; height: 100%;
+    
+    /* 🔴 修改: 增强背景视觉深度 (可选，保持原样也可) */
+    background: radial-gradient(circle at center, rgba(30, 10, 20, 0.9) 0%, #050005 100%);
+    
+    /* 🟢 关键: 确保层级极高 (高于普通 UI 和 Canvas) */
+    z-index: 4000;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    backdrop-filter: blur(5px);
+    animation: fadeIn 0.4s ease-out;
+    
+    /* 🟢 核心修正: 强制捕获所有鼠标事件，防止穿透 */
+    pointer-events: all; /* 兼容性写法，等同于 auto */
+    cursor: default;     /* 重置鼠标样式，表明这里是普通区域 */
+}
+
+/* 防止容器内部点击冒泡导致意外关闭 (如果外部有点击关闭逻辑的话) */
+.h-container {
+    /* ... (之前的属性) */
+    
+    /* 确保容器本身也是阻挡穿透的实体 */
+    pointer-events: auto; 
+    z-index: 4001; /* 略高于遮罩 */
+}
+
+/* 2. 主容器 */
+.h-container {
+    /* 🔴 响应式尺寸调整 */
+    width: 95%;           /* 移动端优先，占满宽度 */
+    max-width: 1000px;    /* PC端限制最大宽度，防止过宽 */
+    height: 90vh;         /* 使用视口高度，留出上下边距 */
+    max-height: 900px;    /* 限制最大高度 */
+    min-height: 500px;    /* 防止高度过小导致内容无法显示 */
+    
+    background: var(--h-panel-bg);
+    border: 1px solid var(--h-border-color);
+    box-shadow: 0 0 30px rgba(255, 20, 147, 0.15); /* 柔和粉色光晕 */
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    overflow: hidden;
+    border-radius: 6px;
+}
+
+/* --- 🟢 新增：环境信息栏 --- */
+.h-header-bar {
+    height: 36px;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(255, 105, 180, 0.15);
+    display: flex;
+    align-items: center;
+    justify-content: center; /* 居中显示 */
+    gap: 15px;
+    font-size: 0.85rem;
+    color: var(--h-text-dim);
+    letter-spacing: 1px;
+}
+
+.info-item {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.info-item .icon {
+    font-size: 0.9rem;
+    filter: drop-shadow(0 0 2px var(--h-pink-primary)); /* 增加一点霓虹光晕 */
+}
+
+.info-item .text {
+    color: var(--h-text-main);
+    font-family: 'Cinzel', serif; /* 保持一致的衬线字体 */
+}
+
+.info-divider {
+    width: 4px;
+    height: 4px;
+    background: var(--h-pink-primary);
+    border-radius: 50%;
+    opacity: 0.5;
+}
+
+/* =========================================
+   3. 顶层：状态监控 (Monitor Panel)
+   ========================================= */
+/* 修改后 */
+.h-monitor-panel {
+    /* 🔴 移除固定高度，改为弹性布局 */
+    min-height: 120px; 
+    flex-shrink: 0;       /* 防止被中间聊天区挤压 */
+    
+    padding: 15px 20px;   /* 稍微减小内边距 */
+    background: rgba(0, 0, 0, 0.2);
+    border-bottom: 1px solid var(--h-border-color);
+    display: flex;
+    align-items: center;
+    gap: 20px;            /* 减小间距 */
+    
+    /* 🔴 移动端适配：允许换行 */
+    flex-wrap: wrap;      
+    justify-content: center; /* 换行后居中对齐 */
+}
+
+/* --- 左侧：角色信息组 --- */
+.char-info-group {
+    position: relative; /* 用于悬浮窗定位 */
+    cursor: help;
+}
+
+/* 简易角色方框 (替代头像) */
+.char-box-simple {
+    width: 120px;
+    height: 60px;
+    border: 1px solid var(--h-pink-primary);
+    background: rgba(255, 105, 180, 0.05);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+    transition: all 0.3s ease;
+}
+
+.char-name-text {
+    color: var(--h-pink-primary);
+    font-family: 'Cinzel', serif; /* 保持游戏统一字体 */
+    font-size: 1.1rem;
+    font-weight: bold;
+    letter-spacing: 1px;
+    text-shadow: 0 0 5px var(--h-pink-glow);
+}
+
+/* 悬停高亮 */
+.char-info-group:hover .char-box-simple {
+    background: rgba(255, 105, 180, 0.15);
+    box-shadow: 0 0 15px var(--h-pink-glow);
+}
+
+/* --- 悬浮窗：长期属性 (Tooltip) --- */
+.h-stat-tooltip {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    margin-top: 15px; /* 与方框的间距 */
+    width: 260px;
+    
+    background: rgba(15, 10, 15, 0.98);
+    border: 1px solid var(--h-pink-primary);
+    border-radius: 4px;
+    padding: 15px;
+    
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-5px);
+    transition: all 0.2s ease-in-out;
+    
+    box-shadow: 0 5px 20px rgba(0,0,0,0.8);
+    z-index: 100;
+    pointer-events: none; /* 防止鼠标挡住 */
+}
+
+.char-info-group:hover .h-stat-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.tooltip-header {
+    text-align: center;
+    color: var(--h-pink-primary);
+    font-size: 0.9rem;
+    font-weight: bold;
+    margin-bottom: 10px;
+    letter-spacing: 2px;
+    border-bottom: 1px solid rgba(255, 105, 180, 0.2);
+    padding-bottom: 5px;
+}
+
+.tooltip-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 4px;
+    font-size: 0.85rem;
+    color: var(--h-text-dim);
+}
+.tooltip-row .val { color: var(--h-text-main); font-weight: bold; }
+
+.tooltip-divider {
+    height: 1px;
+    background: rgba(255, 105, 180, 0.2);
+    margin: 8px 0;
+}
+
+.tooltip-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 4px 10px;
+}
+
+.part-item {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.8rem;
+}
+.part-name { color: #888; }
+
+/* 开发度数值颜色 */
+.part-val.dev-low { color: #aaa; }
+.part-val.dev-mid { color: #ffb7b2; } /* 浅粉 */
+.part-val.dev-high { color: #ff69b4; font-weight: bold; } /* 亮粉 */
+
+
+/* --- 右侧：短期属性网格 --- */
+.stats-grid {
+    flex: 1;
+    display: grid;
+    /* 🔴 使用 minmax 实现自适应：宽屏双列，窄屏单列 */
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 8px 20px;
+    width: 100%; /* 确保在换行时占满容器 */
+}
+
+.stat-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+/* 快感条占满两列 */
+.stat-row.large {
+    grid-column: span 2;
+    margin: 5px 0;
+}
+
+.stat-label {
+    width: 40px;
+    font-size: 0.8rem;
+    color: var(--h-text-dim);
+    text-align: right;
+}
+.stat-label.icon { font-size: 1.1rem; color: var(--h-pink-primary); }
+
+.stat-track {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+}
+.stat-row.large .stat-track { height: 10px; }
+
+/* 进度条通用样式 (平滑过渡) */
+.stat-fill {
+    height: 100%;
+    border-radius: 3px;
+    transition: width 0.6s cubic-bezier(0.22, 1, 0.36, 1); /* 丝滑缓动 */
+    box-shadow: 0 0 5px currentColor; /* 自身颜色的光晕 */
+}
+
+/* 各属性配色 (粉/红系) */
+.stat-fill.stamina { background: #ff6b81; color: #ff6b81; } /* 浅红 */
+.stat-fill.sanity { background: #70a1ff; color: #70a1ff; }  /* 保持一点蓝色作为对比，或者改为淡紫 #a29bfe */
+.stat-fill.pleasure { 
+    background: linear-gradient(90deg, var(--h-pink-primary), var(--h-pink-deep)); 
+    color: var(--h-pink-deep);
+}
+.stat-fill.excitement { background: #ffa502; color: #ffa502; } /* 橙色 */
+.stat-fill.shame { background: #ff4757; color: #ff4757; }     /* 深红 */
+
+.stat-val {
+    font-size: 0.9rem;
+    color: var(--h-pink-primary);
+    width: 40px;
+    text-align: right;
+    font-weight: bold;
+}
+
+/* 标签容器 */
+.sexuality-tags-container {
+    display: flex;
+    flex-wrap: wrap;       /* 允许自动换行 */
+    gap: 6px;              /* 标签间距 */
+    margin-top: 8px;       /* 与标题的距离 */
+    justify-content: flex-start; /* 左对齐 */
+}
+
+/* 单个性癖标签 */
+.sexuality-tag {
+    font-size: 0.75rem;    /* 小字号 */
+    color: var(--h-text-main);
+    background: rgba(255, 105, 180, 0.08); /* 极淡的粉色背景 */
+    border: 1px solid rgba(255, 105, 180, 0.3); /* 细微边框 */
+    padding: 3px 8px;      /* 内边距 */
+    border-radius: 4px;    /* 圆角矩形 */
+    line-height: 1.2;
+    transition: all 0.2s ease;
+    cursor: default;
+    
+    /* 增加一点文字阴影防止看不清 */
+    text-shadow: 0 0 2px rgba(0,0,0,0.5);
+}
+
+/* 悬停高亮效果 */
+.sexuality-tag:hover {
+    background: rgba(255, 105, 180, 0.25);
+    border-color: var(--h-pink-primary);
+    color: #fff;
+    box-shadow: 0 0 8px var(--h-pink-glow);
+    transform: translateY(-1px);
+}
+
+/* =========================================
+   4. 中层：剧情流 (Stage Panel)
+   ========================================= */
+.h-stage-panel {
+    flex: 1;
+    overflow-y: auto;
+    padding: 20px 40px;
+    display: flex;
+    flex-direction: column;
+    scroll-behavior: smooth;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.1), rgba(0,0,0,0.3));
+}
+
+.log-wrapper { display: flex; flex-direction: column; gap: 12px; }
+
+.h-log-item {
+    display: flex;
+    max-width: 85%;
+    animation: slideUp 0.3s ease-out;
+}
+
+/* AI 消息 (左侧) */
+.h-log-item.ai { align-self: flex-start; }
+.h-log-item.ai .log-content-box {
+    background: rgba(40, 20, 30, 0.6);
+    border: 1px solid rgba(255, 105, 180, 0.15);
+    border-radius: 2px 12px 12px 12px;
+    padding: 12px 18px;
+    color: var(--h-text-main);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+.h-log-item.ai .log-name { color: var(--h-pink-primary); }
+
+/* 玩家消息 (右侧) */
+.h-log-item.user { align-self: flex-end; flex-direction: row-reverse; }
+.h-log-item.user .log-content-box {
+    background: rgba(60, 60, 70, 0.5);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 12px 2px 12px 12px;
+    padding: 12px 18px;
+    text-align: right;
+    color: #eee;
+}
+.h-log-item.user .log-name { color: #aaa; }
+
+/* 系统消息 (居中) */
+.h-log-item.system { 
+    align-self: center; 
+    max-width: 100%; 
+    margin: 10px 0;
+}
+.h-log-item.system .log-content-box {
+    /* 🔴 字体调整：与对话一致 */
+    color: #ecf0f1;      /* 亮白色文本，不再是暗淡的灰色 */
+    font-size: 1rem;     /* 增大字号，原为 0.85rem */
+    font-style: normal;  /* 取消斜体 (可选，如果希望看清楚建议取消) */
+    
+    /* 🔴 背景增强 */
+    background: rgba(0, 0, 0, 0.6); /* 深色半透明背景 */
+    border: 1px solid rgba(255, 105, 180, 0.3); /* 微弱的粉色边框 */
+    border-radius: 6px;
+    padding: 8px 15px;   /* 增加内边距撑开背景 */
+    
+    text-align: center;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.3); /* 增加一点立体感 */
+}
+
+.log-name {
+    font-size: 0.75rem;
+    margin-bottom: 4px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+}
+.log-text { line-height: 1.5; white-space: pre-wrap; }
+
+/* =========================================
+   5. 底层：控制台 (Console Panel) - 动态切换
+   ========================================= */
+.h-console-panel {
+    height: auto;
+    min-height: 140px;
+    max-height: 25vh; /* 限制最大高度不超过视口的 1/4 */
+    flex-shrink: 0;   /* 同样防止被压缩 */
+    
+    background: rgba(15, 8, 12, 0.9);
+    border-top: 1px solid var(--h-border-color);
+    padding: 20px 30px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    position: relative;
+}
+
+/* --- 模式 A: 文本输入区 --- */
+.h-input-area {
+    display: flex;
+    flex-direction: row; /* 🔴 强制横向排列 */
+    flex-wrap: nowrap;   /* 🔴 禁止换行 */
+    align-items: stretch; /* 让按钮和输入框高度自动一致 */
+    gap: 15px;
+    height: 100%;
+    width: 100%;
+}
+
+.h-input-area textarea {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 105, 180, 0.2);
+    border-radius: 4px;
+    color: var(--h-text-main);
+    padding: 10px;
+    font-size: 1rem;
+    resize: none;
+    transition: all 0.3s;
+}
+
+textarea:focus {
+    outline: none;
+    border-color: var(--h-pink-primary);
+    background: rgba(20, 10, 15, 0.5);
+}
+
+.h-send-btn {
+    width: 60px;
+    flex-shrink: 0;      /* 🔴 禁止按钮被挤压变小 */
+    height: auto;        /* 跟随容器高度 */
+    
+    /* 以下保持原样 */
+    background: rgba(255, 105, 180, 0.1);
+    border: 1px solid var(--h-pink-primary);
+    color: var(--h-pink-primary);
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    font-size: 1.2rem;
+    display: flex;       /* 确保图标居中 */
+    justify-content: center;
+    align-items: center;
+}
+.send-btn:hover {
+    background: var(--h-pink-primary);
+    color: #fff;
+}
+
+/* --- 模式 B: 选项选择区 (Choice Grid) --- */
+.choice-area {
+    flex: 1;
+    overflow-y: auto; /* 选项过多可滚动 */
+}
+
+.h-choice-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr; /* 双列显示 */
+    gap: 10px;
+    height: 100%;
+}
+
+.h-choice-btn {
+    background: rgba(255, 105, 180, 0.05);
+    border: 1px solid var(--h-border-color);
+    color: var(--h-text-main);
+    padding: 10px 15px;
+    border-radius: 4px;
+    cursor: pointer;
+    text-align: left;
+    transition: all 0.2s;
+    font-size: 0.95rem;
+    display: flex;
+    align-items: center;
+}
+
+.h-choice-btn:hover {
+    background: rgba(255, 105, 180, 0.2);
+    border-color: var(--h-pink-primary);
+    transform: translateX(2px);
+    box-shadow: 0 0 10px rgba(255, 105, 180, 0.1);
+}
+
+.h-choice-btn::before {
+    content: '◇';
+    margin-right: 8px;
+    color: var(--h-pink-primary);
+}
+.h-choice-btn:hover::before { content: '◆'; }
+
+/* --- 模式 C: 加载/处理中 --- */
+.loading-area {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+.loading-bar-container {
+    width: 60%;
+    text-align: center;
+}
+.loading-text {
+    color: var(--h-pink-primary);
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+    letter-spacing: 2px;
+    animation: blink 1.5s infinite;
+}
+.loading-bar-indeterminate {
+    height: 4px;
+    width: 100%;
+    background: rgba(255,255,255,0.1);
+    border-radius: 2px;
+    overflow: hidden;
+    position: relative;
+}
+.loading-bar-indeterminate::after {
+    content: '';
+    position: absolute;
+    top: 0; left: 0; bottom: 0;
+    width: 30%;
+    background: var(--h-pink-primary);
+    animation: shimmer 1.5s infinite linear;
+}
+
+/* --- 底部功能条 --- */
+.action-bar {
+    height: 30px;
+    display: flex;
+    align-items: center;
+}
+.spacer { flex: 1; }
+
+.ctrl-btn.leave {
+    background: transparent;
+    border: 1px solid #555;
+    color: #888;
+    padding: 4px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.8rem;
+    transition: all 0.2s;
+}
+.ctrl-btn.leave:hover {
+    border-color: #e74c3c;
+    color: #e74c3c;
+}
+
+/* 点击继续提示 */
+.continue-hint {
+    flex: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    height: 100%;
+}
+.blink-text {
+    color: var(--h-pink-primary);
+    font-size: 1.1rem;
+    animation: pulse-opacity 1.5s infinite;
+}
+
+/* =========================================
+   8. 结算面板 (Settlement Modal)
+   ========================================= */
+.h-settlement-modal {
+    position: absolute;
+    top: 190px; /* 避开顶部的 Monitor Panel */
+    left: 0;
+    width: 100%;
+    bottom: 0;
+    background: rgba(15, 10, 15, 0.98); /* 深色背景遮挡住聊天流 */
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+    animation: slideUp 0.5s ease-out;
+    backdrop-filter: blur(5px);
+}
+
+.settlement-header {
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.settlement-title {
+    color: var(--h-text-dim);
+    letter-spacing: 5px;
+    font-size: 0.9rem;
+    margin-bottom: 10px;
+    border-bottom: 1px solid var(--h-pink-primary);
+    display: inline-block;
+    padding-bottom: 5px;
+}
+
+.settlement-score {
+    font-size: 5rem;
+    font-family: 'Cinzel', serif;
+    font-weight: bold;
+    color: var(--h-pink-primary);
+    text-shadow: 0 0 20px var(--h-pink-primary), 0 0 40px var(--h-pink-deep);
+    line-height: 1;
+    animation: pulse-red 2s infinite;
+}
+
+.settlement-rank {
+    font-size: 1rem;
+    color: #fff;
+    letter-spacing: 2px;
+    opacity: 0.8;
+}
+
+.settlement-body {
+    width: 80%;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    margin-bottom: 40px;
+}
+
+/* 评价框 */
+.ai-comment-box {
+    background: rgba(255, 105, 180, 0.05);
+    border: 1px solid rgba(255, 105, 180, 0.3);
+    padding: 15px;
+    border-radius: 8px;
+    text-align: center;
+}
+
+.ai-comment-box .label, .rewards-box .label {
+    color: var(--h-pink-primary);
+    font-size: 0.85rem;
+    margin-bottom: 8px;
+    font-weight: bold;
+}
+
+.ai-comment-box .text {
+    color: var(--h-text-main);
+    font-style: italic;
+    font-size: 1.1rem;
+    line-height: 1.6;
+}
+
+/* 奖励列表 */
+.rewards-box {
+    text-align: center;
+}
+
+.reward-list {
+    display: flex;
+    justify-content: center;
+    gap: 15px;
+    flex-wrap: wrap;
+}
+
+.reward-item {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 8px 15px;
+    border-radius: 4px;
+    border: 1px solid #444;
+    color: #ecf0f1;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 0.9rem;
+}
+
+/* 交互提示 */
+.char-box-simple.interactive {
+    cursor: pointer;
+    border-style: dashed; /* 稍微区分一下单人模式 */
+}
+.char-box-simple.interactive:hover {
+    background: rgba(255, 105, 180, 0.25);
+    transform: scale(1.02);
+}
+
+.reward-item.exp { border-color: #f1c40f; color: #f1c40f; }
+.reward-item.item { border-color: #a29bfe; color: #a29bfe; }
+
+/* 底部按钮 */
+.finish-btn {
+    padding: 12px 40px;
+    background: transparent;
+    border: 2px solid var(--h-pink-primary);
+    color: var(--h-pink-primary);
+    font-size: 1.2rem;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-family: 'Cinzel', serif;
+}
+
+.finish-btn:hover {
+    background: var(--h-pink-primary);
+    color: #fff;
+    box-shadow: 0 0 20px rgba(255, 105, 180, 0.4);
+    transform: scale(1.05);
+}
+
+/* 动画补充 */
+.fade-enter-active, .fade-leave-active {
+    transition: opacity 0.5s;
+}
+.fade-enter-from, .fade-leave-to {
+    opacity: 0;
+}
+
+@keyframes pulse-opacity {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.3; }
+}
+
+/* =========================================
+   6. 关键动画
+   ========================================= */
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+@keyframes slideUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes shimmer {
+    0% { left: -30%; }
+    100% { left: 100%; }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}
+
+/* =========================================
+   9. 移动端适配 (Mobile Responsive)
+   ========================================= */
+@media (max-width: 768px) {
+    /* 调整容器大小 */
+    .h-container {
+        width: 100%;
+        height: 100%;
+        border-radius: 0; /* 全屏模式下去除圆角 */
+        border: none;
+    }
+
+    /* 顶部面板紧凑化 */
+    .h-monitor-panel {
+        padding: 10px;
+        gap: 10px;
+    }
+
+    /* 角色框缩小 */
+    .char-box-simple {
+        width: 80px;
+        height: 80px; /* 变成正方形头像风格 */
+        border-radius: 50%; /* 圆形头像 */
+    }
+    .char-name-text {
+        font-size: 0.8rem; /* 缩小字体 */
+    }
+
+    /* 属性条更紧凑 */
+    .stat-label { width: 25px; font-size: 0.7rem; }
+    .stat-val { width: 30px; font-size: 0.8rem; }
+    .stats-grid { gap: 5px 10px; }
+
+    /* 聊天区域 */
+    .h-stage-panel {
+        padding: 15px; /* 减少留白 */
+    }
+    .h-log-item {
+        max-width: 95%; /* 气泡更宽 */
+    }
+    .log-content-box {
+        padding: 10px 12px;
+        font-size: 0.95rem;
+    }
+
+    /* 底部输入区 */
+    .h-console-panel {
+        padding: 10px 15px;
+        min-height: 120px;
+    }
+    .h-input-area {
+        gap: 8px;
+    }
+    .h-send-btn {
+        width: 50px;
+        font-size: 1rem;
+    }
+    
+    /* 选项变为单列，方便手指点击 */
+    .h-choice-grid {
+        grid-template-columns: 1fr; 
+    }
+    .h-choice-btn {
+        padding: 12px; /* 增大点击区域 */
+    }
+}

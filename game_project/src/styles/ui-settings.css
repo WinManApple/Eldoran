@@ -1,0 +1,248 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-settings.css */
+
+/* --- 1. 容器与基础布局 --- */
+.sub-menu {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    /* 背景遮罩：阻挡视线 */
+    background: rgba(0, 0, 0, 0.75);
+    z-index: 200;
+    
+    /* 布局居中 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+
+    /* 交互设置：
+       auto = 阻挡点击穿透到下层游戏 (标准模态框行为)
+       如果希望点击背景能操作游戏，可改为 none (但不推荐用于设置界面) 
+    */
+    pointer-events: auto;
+}
+
+/* --- 2. 设置主面板 --- */
+.settings-panel {
+    /* 尺寸自适应：移动端占满 95%，PC端限制最大宽度 */
+    width: 95%;
+    max-width: 650px;
+    
+    /* 高度自适应：防止超出屏幕，内容溢出时滚动 */
+    max-height: 85vh;
+    overflow-y: auto; 
+
+    /* 视觉风格 */
+    background: #151515;
+    border: 2px solid #d4af37; /* 金色边框 */
+    padding: 25px;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.9);
+    color: #fff;
+    
+    /* 布局 */
+    display: flex;
+    flex-direction: column;
+    /* 移除全局 gap，改用 block margin 控制，更灵活 */
+    
+    /* 交互：确保面板内的点击有效 */
+    pointer-events: auto;
+}
+
+/* --- 3. 滚动条美化 (Webkit) --- */
+.settings-panel::-webkit-scrollbar {
+    width: 6px; /* 移动端更细一点 */
+}
+.settings-panel::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+    margin: 10px 0;
+}
+.settings-panel::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+}
+.settings-panel::-webkit-scrollbar-thumb:hover {
+    background: #d4af37;
+}
+
+/* --- 4. 通用文本与标题 --- */
+.settings-panel .panel-title {
+    text-align: center;
+    color: #d4af37;
+    font-size: 22px;
+    margin: 0 0 20px 0;
+    padding-bottom: 15px;
+    border-bottom: 1px solid rgba(212, 175, 55, 0.3);
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.settings-panel label {
+    color: #ccc;
+    font-size: 14px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    margin-bottom: 8px;
+    display: block;
+}
+
+/* --- 5. 模块化结构 --- */
+.settings-panel .setting-block {
+    margin-bottom: 20px;
+    /* 可以在这里添加模块间的虚线分隔，如果 JS 里没控制的话 */
+}
+
+.settings-panel .setting-row {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+/* --- 6. 控件样式：按钮组 (分辨率) --- */
+.settings-panel .res-buttons {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+}
+
+.settings-panel .res-buttons button {
+    flex: 1 1 auto; /* 自动伸缩，适应移动端 */
+    min-width: 80px;
+}
+
+/* --- 7. 控件样式：难度滑块 --- */
+.settings-panel .setting-diff-wrapper {
+    background: rgba(255, 255, 255, 0.05);
+    padding: 15px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.settings-panel .diff-slider-container {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+}
+
+.settings-panel .diff-slider {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 8px;
+    background: linear-gradient(90deg, #4caf50, #ffeb3b, #f44336, #000);
+    border-radius: 4px;
+    outline: none;
+    cursor: pointer;
+}
+
+/* 滑块头部 - 增大触控区域适配移动端 */
+.settings-panel .diff-slider::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 24px;  /* 增大 */
+    height: 24px; /* 增大 */
+    background: #fff;
+    border: 3px solid #333;
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
+    transition: transform 0.1s;
+}
+
+.settings-panel .diff-slider::-webkit-slider-thumb:active {
+    transform: scale(1.1);
+    background: #d4af37;
+}
+
+.settings-panel .diff-current-label {
+    min-width: 60px;
+    text-align: center;
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 13px;
+    font-weight: bold;
+    color: #fff;
+    text-shadow: 1px 1px 2px #000;
+}
+
+/* 难度色块 */
+.diff-bg-1 { background-color: #4caf50; }
+.diff-bg-2 { background-color: #2196f3; }
+.diff-bg-3 { background-color: #ff9800; }
+.diff-bg-4 { background-color: #f44336; }
+.diff-bg-5 { background-color: #220000; border: 1px solid #f00; }
+
+/* --- 8. 控件样式：开发者模式 --- */
+.settings-panel .dev-mode-toggle {
+    margin-top: 10px;
+    padding: 10px;
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    user-select: none;
+}
+
+.settings-panel .dev-checkbox {
+    margin-right: 10px;
+    width: 18px; /* 增大触控区 */
+    height: 18px;
+    cursor: pointer;
+    accent-color: #d4af37; /* 现代浏览器支持自定义复选框颜色 */
+}
+
+.settings-panel .dev-panel-zone {
+    margin-top: 10px;
+    background: rgba(0, 20, 40, 0.8);
+    border: 1px solid #4da6ff;
+    padding: 15px;
+    border-radius: 4px;
+    font-family: 'Consolas', monospace;
+}
+
+.settings-panel .dev-warning {
+    color: #ff4d4d;
+    font-size: 12px;
+    display: block;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.settings-panel .dev-param-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 8px;
+    font-size: 13px;
+    color: #4da6ff;
+}
+
+.settings-panel .dev-input {
+    width: 80px;
+    background: rgba(0, 0, 0, 0.6);
+    border: 1px solid #4da6ff;
+    color: #fff;
+    padding: 4px;
+    text-align: right;
+    border-radius: 2px;
+}
+
+/* --- 9. 底部按钮区 --- */
+.settings-panel .panel-footer {
+    margin-top: auto; /* 确保沉底 */
+    padding-top: 20px;
+    display: flex;
+    justify-content: center;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}

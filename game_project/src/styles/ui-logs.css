@@ -1,0 +1,86 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-logs.css */
+
+/* 1. 全局包装容器 */
+.global-log-wrapper {
+    position: fixed;
+    bottom: 20px;
+    left: 20px;
+    z-index: 9999;
+    pointer-events: none;
+    display: flex;
+    /* 🟢 修正：改为 column (标准流)，配合 HTML 顺序 [日志 -> 按钮] */
+    /* 这样日志会在上面，按钮在下面 */
+    flex-direction: column; 
+    align-items: flex-start; /* 左对齐 */
+}
+
+/* 2. 交互锚点按钮 (📜) */
+.log-anchor {
+    width: 40px;
+    height: 40px;
+    background: rgba(10, 10, 25, 0.8);
+    border: 1px solid var(--mana-blue, #66ccff);
+    border-radius: 50%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    cursor: pointer;
+    font-size: 20px;
+    pointer-events: auto;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    box-shadow: 0 0 10px rgba(102, 204, 255, 0.2);
+    /* 🟢 修改：去掉 margin-bottom，因为按钮现在在最下面 */
+    margin-top: 10px; /* 让按钮和上方的日志保持距离 */
+}
+
+.log-anchor:hover {
+    background: rgba(102, 204, 255, 0.2);
+    box-shadow: 0 0 15px rgba(102, 204, 255, 0.5);
+    transform: scale(1.1);
+}
+
+/* 3. 日志面板调整 */
+.log-container {
+    width: 380px;
+    max-height: 250px;
+    overflow-y: auto;
+    background: linear-gradient(to right, rgba(5, 5, 15, 0.85), transparent);
+    padding: 12px;
+    border-left: 2px solid var(--mana-blue, #66ccff);
+    border-radius: 4px;
+    
+    /* 初始状态：隐藏且穿透 */
+    opacity: 0;
+    /* 🟢 修改：因为在上方展开，初始位移改为向下一点，产生“浮出”感 */
+    transform: translateY(10px); 
+    transition: all 0.5s ease;
+    pointer-events: none; 
+    
+    /* 确保日志在视觉上位于按钮上方 */
+    order: 0; 
+}
+
+/* 激活状态 */
+.log-container.active {
+    opacity: 1;
+    transform: translateY(0);
+    pointer-events: auto;
+}

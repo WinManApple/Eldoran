@@ -1,0 +1,413 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-NPCManager.css */
+
+/* 全屏遮罩：阻止点击穿透到游戏层 */
+.npc-manager-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.6);
+    backdrop-filter: blur(4px);
+    z-index: 3000; /* 确保高于 HUD */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: all; /* 拦截所有鼠标事件 */
+}
+
+/* 主容器：虚空面板风格 */
+.npc-container.void-panel {
+    width: 85%;
+    height: 80%;
+    max-width: 1200px;
+    background: linear-gradient(135deg, rgba(10, 10, 18, 0.95) 0%, rgba(25, 20, 40, 0.95) 100%);
+    border: 1px solid rgba(138, 79, 255, 0.3);
+    box-shadow: 
+        0 0 20px rgba(0, 0, 0, 0.8),
+        inset 0 0 30px rgba(80, 40, 150, 0.1),
+        0 0 10px rgba(138, 79, 255, 0.2); /* 外发光 */
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    color: #e0e0e0;
+    font-family: 'Cinzel', serif; /* 假设有奇幻字体，没有则回退 */
+    overflow: hidden;
+    position: relative;
+}
+
+/* 顶部装饰条 */
+.npc-container.void-panel::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #8a4fff, transparent);
+}
+
+/* 头部区域 */
+.npc-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 25px;
+    background: rgba(0, 0, 0, 0.3);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.npc-header h2 {
+    margin: 0;
+    font-size: 1.4rem;
+    color: #d8c2ff;
+    text-shadow: 0 0 5px rgba(138, 79, 255, 0.5);
+}
+
+.close-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 2rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: color 0.2s;
+}
+
+.close-btn:hover {
+    color: #ff4444;
+}
+
+/* 内容布局：左右分栏 */
+.npc-content {
+    flex: 1;
+    display: flex;
+    overflow: hidden; /* 防止溢出 */
+}
+
+/* 左侧：NPC 列表 */
+.npc-sidebar {
+    width: 280px;
+    min-width: 250px;
+    background: rgba(0, 0, 0, 0.2);
+    border-right: 1px solid rgba(255, 255, 255, 0.05);
+    padding: 10px;
+    overflow-y: auto; /* 支持滚动 */
+}
+
+.npc-list-item {
+    padding: 12px 15px;
+    margin-bottom: 8px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid transparent;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.npc-list-item:hover {
+    background: rgba(138, 79, 255, 0.1);
+    border-color: rgba(138, 79, 255, 0.3);
+}
+
+.npc-list-item.active {
+    background: linear-gradient(90deg, rgba(138, 79, 255, 0.2), transparent);
+    border-left: 3px solid #b388ff;
+    box-shadow: 0 0 10px rgba(138, 79, 255, 0.1);
+}
+
+.npc-list-name {
+    font-weight: bold;
+    color: #e0e0e0;
+}
+
+.npc-list-role {
+    font-size: 0.8rem;
+    color: #888;
+}
+
+.empty-hint {
+    text-align: center;
+    color: #666;
+    margin-top: 50px;
+    font-style: italic;
+}
+
+/* 右侧：详细信息 */
+.npc-details {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+    background: radial-gradient(circle at top right, rgba(40, 30, 60, 0.4), transparent);
+}
+
+/* 空状态占位 */
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    color: #666;
+}
+
+.empty-state .void-icon {
+    font-size: 4rem;
+    margin-bottom: 20px;
+    opacity: 0.5;
+    animation: float 3s ease-in-out infinite;
+}
+
+/* 个人信息卡片 */
+.profile-card {
+    display: flex;
+    gap: 20px;
+    margin-bottom: 25px;
+    align-items: flex-start;
+}
+
+.avatar-placeholder {
+    width: 80px;
+    height: 80px;
+    background: #2a2a3a;
+    border: 2px solid #4a4a6a;
+    border-radius: 8px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    font-size: 2.5rem;
+    color: #6a6a8a;
+    box-shadow: 0 0 15px rgba(0,0,0,0.5);
+}
+
+.profile-info {
+    flex: 1;
+}
+
+.full-name {
+    font-size: 1.8rem;
+    margin: 0 0 10px 0;
+    color: #fff;
+    letter-spacing: 1px;
+}
+
+.tags-row {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.tag {
+    padding: 4px 10px;
+    border-radius: 4px;
+    font-size: 0.85rem;
+    border: 1px solid rgba(255,255,255,0.2);
+    background: rgba(0,0,0,0.3);
+}
+
+.tag.state.live { color: #4caf50; border-color: #2e7d32; }
+.tag.state.dead { color: #f44336; border-color: #c62828; text-decoration: line-through; }
+.tag.lineup { color: #ffd700; border-color: #ff8f00; }
+
+/* 威胁等级 */
+.combat-rating {
+    text-align: right;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+}
+
+.combat-rating label {
+    font-size: 0.75rem;
+    color: #888;
+    text-transform: uppercase;
+}
+
+.combat-rating span {
+    font-size: 1.2rem;
+    font-weight: bold;
+    padding: 2px 8px;
+    border-radius: 4px;
+    margin-top: 4px;
+}
+
+.rating-low { color: #a5d6a7; text-shadow: 0 0 5px #a5d6a7; }
+.rating-medium { color: #ffcc80; text-shadow: 0 0 5px #ffcc80; }
+.rating-high { color: #ef9a9a; text-shadow: 0 0 8px #e53935; animation: pulse-red 2s infinite; }
+
+/* 分割线 */
+.divider-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+    margin: 20px 0;
+}
+
+/* 详细属性网格 */
+.info-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.info-item {
+    background: rgba(255,255,255,0.03);
+    padding: 10px;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+}
+
+.info-item.full-width {
+    grid-column: span 2;
+}
+
+.info-item .label {
+    font-size: 0.8rem;
+    color: #8a8aab;
+    margin-bottom: 4px;
+}
+
+.info-item .value {
+    color: #e0e0e0;
+    line-height: 1.4;
+}
+
+/* 历史记录 */
+.history-section h4, .detail-section h4 {
+    color: #b388ff;
+    margin-bottom: 15px;
+    border-left: 3px solid #b388ff;
+    padding-left: 10px;
+}
+
+.history-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    max-height: 150px;
+    overflow-y: auto;
+    border: 1px solid rgba(255,255,255,0.05);
+    background: rgba(0,0,0,0.2);
+    border-radius: 4px;
+}
+
+.history-list li {
+    padding: 10px;
+    border-bottom: 1px solid rgba(255,255,255,0.05);
+    font-size: 0.9rem;
+    color: #ccc;
+}
+
+.history-list li:last-child {
+    border-bottom: none;
+}
+
+.no-history {
+    color: #666;
+    font-style: italic;
+    padding: 10px;
+}
+
+/* 底部按钮 */
+.action-footer {
+    margin-top: 30px;
+    display: flex;
+    justify-content: flex-end;
+}
+
+.delete-btn {
+    background: rgba(60, 10, 10, 0.8);
+    color: #ff8888;
+    border: 1px solid #8a2a2a;
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: inherit;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.delete-btn:hover {
+    background: rgba(100, 20, 20, 0.9);
+    border-color: #ff4444;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 0, 0, 0.2);
+}
+
+/* 自定义滚动条 (Webkit) */
+.custom-scroll::-webkit-scrollbar {
+    width: 6px;
+}
+
+.custom-scroll::-webkit-scrollbar-track {
+    background: rgba(0,0,0,0.2);
+}
+
+.custom-scroll::-webkit-scrollbar-thumb {
+    background: rgba(138, 79, 255, 0.3);
+    border-radius: 3px;
+}
+
+.custom-scroll::-webkit-scrollbar-thumb:hover {
+    background: rgba(138, 79, 255, 0.5);
+}
+
+/* 动画 */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+@keyframes pulse-red {
+    0% { opacity: 1; }
+    50% { opacity: 0.7; text-shadow: 0 0 15px #e53935; }
+    100% { opacity: 1; }
+}
+
+/* 响应式调整 */
+@media (max-width: 768px) {
+    .npc-container.void-panel {
+        width: 95%;
+        height: 90%;
+        flex-direction: column;
+    }
+
+    .npc-content {
+        flex-direction: column;
+    }
+
+    .npc-sidebar {
+        width: 100%;
+        height: 150px; /* 移动端限制列表高度 */
+        min-width: auto;
+        border-right: none;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    }
+    
+    .npc-details {
+        padding: 15px;
+    }
+}

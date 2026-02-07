@@ -1,0 +1,43 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* =========================================
+   RPG Project Style Manifest
+   (样式总入口1)
+   ========================================= */
+
+/* 1. 基础环境 */
+@import url('./src/styles/base.css');
+
+/* 2. 全屏菜单系统 */
+@import url('./src/styles/ui-menus.css');
+
+/* 3. 游戏内 HUD */
+@import url('./src/styles/ui-hud.css');
+
+/* 4. 独立交互模块 */
+@import url('./src/styles/ui-dialogue.css');
+
+/* 5. 背景特效层 */
+@import url('./src/styles/ui-background.css');
+
+/* 6. 队伍管理 */
+@import url('./src/styles/ui-team.css');
+
+/* 7. 抉择系统 */
+@import './src/styles/ui-choice.css';

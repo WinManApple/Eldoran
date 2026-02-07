@@ -1,0 +1,367 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-H_state.css */
+
+/* 全局遮罩 - 极高层级 */
+.hse-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.7);
+    backdrop-filter: blur(4px);
+    z-index: 2000; /* 高于 TeamOverlay */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    animation: hse-fade-in 0.3s ease;
+    pointer-events: auto;
+}
+
+/* 主窗口 */
+.hse-window {
+    width: 900px;
+    height: 80vh;
+    max-width: 95vw;
+    max-height: 95vh;
+    background: linear-gradient(135deg, rgba(20, 20, 30, 0.95), rgba(30, 30, 45, 0.95));
+    border: 1px solid #44aadd;
+    box-shadow: 0 0 20px rgba(68, 170, 221, 0.2), inset 0 0 50px rgba(0, 0, 0, 0.5);
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    color: #eee;
+    font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+    overflow: hidden; /* 防止内部溢出 */
+}
+
+/* 顶部标题栏 */
+.hse-header {
+    height: 50px;
+    background: rgba(0, 0, 0, 0.4);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 20px;
+    flex-shrink: 0;
+}
+
+.hse-title {
+    font-size: 1.1em;
+    font-weight: bold;
+    color: #ccc;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.hse-char-name {
+    color: #ff99cc;
+    text-shadow: 0 0 5px rgba(255, 153, 204, 0.4);
+}
+
+.hse-close-btn {
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.8em;
+    cursor: pointer;
+    line-height: 1;
+}
+.hse-close-btn:hover { color: #fff; }
+
+/* 主体内容区 */
+.hse-body {
+    flex: 1;
+    display: flex;
+    overflow: hidden; /* 内部滚动 */
+}
+
+/* 左侧边栏 */
+.hse-sidebar {
+    width: 220px;
+    background: rgba(0, 0, 0, 0.3);
+    border-right: 1px solid rgba(255, 255, 255, 0.1);
+    padding: 15px 0;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto;
+}
+
+.hse-nav-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.hse-nav-item {
+    background: transparent;
+    border: none;
+    text-align: left;
+    padding: 12px 20px;
+    color: #888;
+    cursor: pointer;
+    transition: all 0.2s;
+    border-left: 3px solid transparent;
+}
+
+.hse-nav-item:hover {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ccc;
+}
+
+.hse-nav-item.active {
+    background: rgba(68, 170, 221, 0.1);
+    color: #44aadd;
+    border-left-color: #44aadd;
+}
+
+.hse-nav-item.sub {
+    padding-left: 35px;
+    font-size: 0.9em;
+}
+
+.hse-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 10px 20px;
+}
+
+.hse-sub-label {
+    padding: 5px 20px;
+    font-size: 0.8em;
+    color: #555;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 右侧内容编辑区 */
+.hse-content {
+    flex: 1;
+    padding: 20px 30px;
+    overflow-y: auto;
+    background: rgba(0, 0, 0, 0.1);
+}
+
+.hse-content-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    padding-bottom: 10px;
+}
+
+.hse-section-title {
+    font-size: 1.4em;
+    color: #fff;
+    font-weight: bold;
+}
+
+.hse-hint {
+    font-size: 0.85em;
+    color: #666;
+}
+
+/* 规则卡片 */
+.hse-rules-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+    padding-bottom: 30px;
+}
+
+.hse-rule-card {
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 15px;
+    transition: border-color 0.2s;
+}
+
+.hse-rule-card:hover {
+    border-color: #666;
+}
+
+.hse-rule-top {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.hse-input-group {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 0.9em;
+    color: #aaa;
+}
+
+.hse-num-input {
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #444;
+    color: #44aadd;
+    padding: 4px 8px;
+    border-radius: 4px;
+    width: 80px;
+    text-align: center;
+}
+
+.hse-del-btn {
+    background: none;
+    border: none;
+    font-size: 1.2em;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: opacity 0.2s;
+}
+.hse-del-btn:hover { opacity: 1; transform: scale(1.1); }
+
+.hse-text-input {
+    width: 100%;
+    height: 60px;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #333;
+    border-radius: 4px;
+    color: #ccc;
+    padding: 10px;
+    font-size: 0.95em;
+    resize: vertical;
+    font-family: inherit;
+}
+.hse-text-input:focus {
+    border-color: #44aadd;
+    outline: none;
+    background: rgba(0, 0, 0, 0.5);
+}
+
+.hse-add-btn {
+    padding: 12px;
+    background: rgba(68, 170, 221, 0.1);
+    border: 1px dashed #44aadd;
+    color: #44aadd;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.hse-add-btn:hover {
+    background: rgba(68, 170, 221, 0.2);
+}
+
+/* 标签编辑区 */
+.hse-tags-container {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px;
+    margin-bottom: 20px;
+    min-height: 50px;
+}
+
+.hse-tag {
+    background: rgba(255, 153, 204, 0.15);
+    border: 1px solid rgba(255, 153, 204, 0.4);
+    color: #ff99cc;
+    padding: 5px 12px;
+    border-radius: 20px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.9em;
+}
+
+.hse-tag-remove {
+    cursor: pointer;
+    font-weight: bold;
+    opacity: 0.7;
+}
+.hse-tag-remove:hover { opacity: 1; color: #fff; }
+
+.hse-tag-input-area {
+    display: flex;
+    gap: 10px;
+}
+
+.hse-line-input {
+    flex: 1;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #444;
+    border-radius: 4px;
+    padding: 8px 12px;
+    color: #fff;
+}
+
+/* 底部栏 */
+.hse-footer {
+    height: 60px;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(0, 0, 0, 0.2);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    flex-shrink: 0;
+}
+
+.hse-footer-right {
+    display: flex;
+    gap: 15px;
+}
+
+/* 按钮通用 */
+.hse-btn {
+    padding: 8px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.95em;
+    border: 1px solid transparent;
+    transition: all 0.2s;
+}
+
+.hse-btn.small {
+    padding: 4px 12px;
+    font-size: 0.85em;
+}
+
+.hse-btn.primary {
+    background: #44aadd;
+    color: #000;
+    font-weight: bold;
+}
+.hse-btn.primary:hover { background: #66ccff; box-shadow: 0 0 10px rgba(68, 170, 221, 0.4); }
+
+.hse-btn.secondary {
+    background: transparent;
+    border: 1px solid #666;
+    color: #ccc;
+}
+.hse-btn.secondary:hover { border-color: #fff; color: #fff; }
+
+.hse-btn.danger-ghost {
+    background: transparent;
+    color: #ff6666;
+    opacity: 0.7;
+}
+.hse-btn.danger-ghost:hover { opacity: 1; text-decoration: underline; }
+
+@keyframes hse-fade-in {
+    from { opacity: 0; transform: scale(0.98); }
+    to { opacity: 1; transform: scale(1); }
+}

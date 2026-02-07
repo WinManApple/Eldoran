@@ -1,0 +1,676 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-team.css */
+
+/* ==========================================
+   1. 基础容器与遮罩 (Base Layout)
+   ========================================== */
+.team-overlay {
+    position: fixed;
+    top: 0; left: 0; 
+    width: 100%; height: 100%;
+    background: rgba(5, 5, 15, 0.9);
+    backdrop-filter: blur(12px);
+    z-index: 3500;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    /* 🟢 关键：允许并拦截鼠标事件，防止穿透 */
+    pointer-events: auto; 
+    /* 禁止用户意外选中界面文字，提升原生 App 感 */
+    user-select: none;
+}
+
+.team-window {
+    position: relative; /* 核心修正：确保绝对定位生效 */
+    pointer-events: auto; /* 确保窗口内部可以正常滚动和点击 */
+    width: 1150px;
+    height: 750px;
+    background: rgba(10, 10, 25, 0.95);
+    border: 1px solid rgba(102, 204, 255, 0.4);
+    box-shadow: 0 0 30px rgba(102, 204, 255, 0.15);
+    border-radius: 12px;
+    display: grid;
+    grid-template-columns: 260px 1fr; /* 左侧列表 | 右侧内容区 */
+    overflow: hidden;
+}
+
+/* ==========================================
+   2. 左侧成员列表 (Sidebar)
+   ========================================== */
+.member-list {
+    background: rgba(0, 0, 0, 0.3);
+    border-right: 1px solid rgba(102, 204, 255, 0.15);
+    padding: 25px 15px;
+    display: flex;
+    flex-direction: column;
+}
+
+.side-title {
+    color: var(--mana-blue);
+    font-size: 1.2rem;
+    letter-spacing: 2px;
+    margin-bottom: 25px;
+    padding-left: 10px;
+    border-left: 3px solid var(--mana-blue);
+}
+
+.member-item {
+    padding: 18px;
+    margin-bottom: 12px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 8px;
+    background: rgba(255, 255, 255, 0.02);
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.member-item:hover {
+    background: rgba(102, 204, 255, 0.08);
+    transform: translateX(5px);
+}
+
+.member-item.active {
+    background: rgba(102, 204, 255, 0.15);
+    border-color: var(--mana-blue);
+    box-shadow: inset 0 0 15px rgba(102, 204, 255, 0.2);
+}
+
+.m-name { font-weight: bold; font-size: 1.1rem; color: #fff; }
+.m-info { font-size: 0.85rem; color: #888; margin-top: 4px; }
+
+/* ==========================================
+   3. 主内容区与标签页 (Tabs)
+   ========================================== */
+.main-content {
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+}
+
+.nav-tabs {
+    display: flex;
+    background: rgba(255, 255, 255, 0.03);
+    border-bottom: 2px solid rgba(102, 204, 255, 0.2);
+}
+
+.tab-btn {
+    flex: 1;
+    padding: 18px;
+    background: none;
+    border: none;
+    color: #888;
+    font-size: 1.05rem;
+    cursor: pointer;
+    transition: 0.3s;
+    border-bottom: 3px solid transparent;
+}
+
+.tab-btn:hover { color: #fff; background: rgba(255,255,255,0.05); }
+
+.tab-btn.active {
+    color: var(--mana-blue);
+    background: rgba(102, 204, 255, 0.05);
+    border-bottom-color: var(--mana-blue);
+    font-weight: bold;
+}
+
+.tab-view-container {
+    flex: 1;
+    padding: 30px;
+    overflow-y: auto;
+}
+
+/* ==========================================
+   4. 角色状态页 (Status Pane)
+   ========================================== */
+.char-header-card {
+    background: linear-gradient(90deg, rgba(102, 204, 255, 0.1), transparent);
+    padding: 25px;
+    border-radius: 10px;
+    margin-bottom: 30px;
+    border: 1px solid rgba(102, 204, 255, 0.1);
+}
+
+.header-main { display: flex; justify-content: space-between; align-items: flex-end; margin-bottom: 20px; }
+.h-name { font-size: 2rem; letter-spacing: 4px; font-weight: bold; }
+.h-level { font-size: 1rem; color: var(--mana-blue); opacity: 0.8; }
+
+.vitals-bars { display: flex; flex-direction: column; gap: 12px; }
+.bar-wrap { 
+    height: 24px; background: rgba(0,0,0,0.4); border-radius: 4px; 
+    position: relative; overflow: hidden; border: 1px solid rgba(255,255,255,0.1);
+}
+.bar-fill { height: 100%; transition: width 0.5s ease; }
+.bar-fill.hp { background: linear-gradient(90deg, #8b0000, #ff4444); }
+.bar-fill.mp { background: linear-gradient(90deg, #004488, #0099ff); }
+.bar-text { 
+    position: absolute; width: 100%; text-align: center; 
+    top: 0; line-height: 24px; font-size: 12px; font-weight: bold; text-shadow: 1px 1px 2px #000;
+}
+
+/* 属性网格 */
+.attribute-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    margin-bottom: 30px;
+}
+.attr-item {
+    display: flex;
+    justify-content: space-between;
+    padding: 12px 18px;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+}
+.attr-label { color: #888; font-size: 0.95rem; }
+.attr-val { font-weight: bold; letter-spacing: 1px; }
+
+/* 装备行 */
+.equip-section { display: flex; flex-direction: column; gap: 12px; }
+.equip-row {
+    display: flex; align-items: center; gap: 20px;
+    padding: 15px; background: rgba(0,0,0,0.2);
+    border: 1px solid #333; border-radius: 8px; cursor: pointer; transition: 0.2s;
+}
+.equip-row:hover { border-color: var(--mana-blue); background: rgba(102, 204, 255, 0.05); }
+.e-icon { font-size: 1.5rem; width: 40px; text-align: center; }
+.e-label { font-size: 0.8rem; color: #666; text-transform: uppercase; }
+.e-name { font-weight: bold; color: #d4af37; }
+
+/* ==========================================
+   5. 道具与技能 (Inventory & Skills)
+   ========================================== */
+.pane-title { color: #d4af37; margin-bottom: 20px; padding-bottom: 10px; border-bottom: 1px solid #333; }
+
+.inventory-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 15px; }
+.item-card-mini {
+    background: rgba(255,255,255,0.03); padding: 15px; border-radius: 8px;
+    border: 1px solid #333; cursor: pointer; transition: 0.3s;
+}
+.item-card-mini:hover { border-color: var(--mana-blue); background: rgba(102, 204, 255, 0.1); }
+.i-top { display: flex; justify-content: space-between; margin-bottom: 8px; }
+.i-name { font-weight: bold; color: var(--mana-blue); }
+.i-desc { font-size: 0.85rem; color: #888; }
+
+.skills-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(320px, 1fr)); gap: 20px; }
+.skill-card-v2 {
+    background: rgba(20, 20, 40, 0.6); padding: 20px; border-radius: 10px;
+    border-left: 4px solid #7209b7; border: 1px solid rgba(114, 9, 183, 0.2);
+}
+.sk-header { display: flex; justify-content: space-between; margin-bottom: 12px; }
+.sk-name { font-weight: bold; font-size: 1.1rem; }
+.sk-element { padding: 2px 8px; border-radius: 4px; font-size: 0.75rem; text-transform: uppercase; }
+.sk-element.FIRE { background: #8b0000; }
+.sk-element.WATER { background: #004488; }
+.sk-element.HOLY { background: #aa8800; color: #000; }
+.sk-body { font-size: 0.9rem; color: #aaa; margin-bottom: 15px; line-height: 1.4; }
+.sk-footer { font-size: 0.8rem; color: #666; border-top: 1px solid #333; padding-top: 10px; }
+
+/* ==========================================
+   6. 弹窗系统 (Modals)
+   ========================================== */
+.modal-mask {
+    position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); display: flex; justify-content: center; align-items: center; z-index: 100;
+}
+
+.picker-window, .confirm-window {
+    background: #0f0f1f; border: 2px solid var(--mana-blue); border-radius: 8px;
+    width: 400px; display: flex; flex-direction: column; box-shadow: 0 0 50px rgba(0,0,0,1);
+}
+
+.modal-head { padding: 15px; background: var(--mana-blue); color: #000; font-weight: bold; text-align: center; }
+.modal-body, .confirm-body { padding: 25px; text-align: center; color: #eee; }
+.modal-foot { padding: 15px; display: flex; gap: 10px; justify-content: center; background: rgba(0,0,0,0.3); }
+
+.picker-row { 
+    padding: 12px 20px; border-bottom: 1px solid #222; cursor: pointer; 
+    display: flex; justify-content: space-between; 
+}
+.picker-row:hover { background: rgba(102, 204, 255, 0.1); }
+.p-stats { color: #90be6d; font-size: 0.85rem; }
+
+.empty-hint { padding: 40px; text-align: center; color: #444; font-style: italic; }
+
+.team-window-close {
+    position: absolute;
+    top: 15px;
+    right: 15px;
+    width: 32px;
+    height: 32px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(102, 204, 255, 0.3);
+    color: var(--mana-blue);
+    font-size: 24px;
+    line-height: 28px;
+    cursor: pointer;
+    /* 🟢 确保层级高于 sidebar 或 header-card */
+    z-index: 50; 
+    transition: all 0.2s;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+}
+
+.team-window-close:hover {
+    background: rgba(255, 68, 68, 0.2);
+    border-color: #ff4444;
+    color: #fff;
+    box-shadow: 0 0 10px rgba(255, 68, 68, 0.3);
+}
+
+/* ==========================================
+   7. 全局悬浮提示框 (Global Tooltip)
+   ========================================== */
+.global-tooltip {
+    position: fixed;
+    /* 🟢 修复：极高的层级，确保在黑色遮罩(z=3500+100)之上 */
+    z-index: 99999; 
+    background: rgba(10, 15, 30, 0.95);
+    border: 1px solid #446;
+    padding: 12px;
+    border-radius: 4px;
+    /* 🟢 关键：让鼠标穿透悬浮窗，防止鼠标移动时不断触发 leave/enter 导致闪烁 */
+    pointer-events: none; 
+    max-width: 280px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.8);
+    font-family: "Microsoft YaHei", sans-serif;
+    backdrop-filter: blur(4px);
+}
+
+.t-header { 
+    font-size: 15px; 
+    font-weight: bold; 
+    margin-bottom: 4px; 
+    border-bottom: 1px solid rgba(255,255,255,0.1); 
+    padding-bottom: 4px; 
+}
+
+.t-sub { 
+    font-size: 11px; 
+    color: #88a; 
+    margin-bottom: 8px; 
+    font-style: italic; 
+}
+
+.t-body { 
+    font-size: 13px; 
+    color: #ccc; 
+    line-height: 1.5; 
+    white-space: pre-wrap; 
+}
+
+/* ==========================================
+   8. 队伍管理样式 (新增)
+   ========================================== */
+
+/* 头部布局调整 */
+.m-header-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+/* 未出战状态：变灰半透明 */
+.member-item.undeployed {
+    opacity: 0.6;
+    filter: grayscale(0.8);
+    border-style: dashed;
+}
+.member-item.undeployed .m-name {
+    color: #aaa;
+}
+
+/* 出战切换小按钮 */
+.deploy-toggle {
+    font-size: 10px;
+    padding: 2px 6px;
+    border-radius: 4px;
+    border: 1px solid #555;
+    background: #222;
+    color: #888;
+    cursor: pointer;
+    transition: 0.2s;
+}
+.deploy-toggle:hover {
+    border-color: #888;
+    color: #fff;
+}
+.deploy-toggle.on {
+    border-color: #44aa44;
+    background: rgba(68, 170, 68, 0.2);
+    color: #66ff66;
+}
+
+/* 解散按钮区 */
+.header-actions {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 5px;
+}
+.dismiss-btn-mini {
+    background: rgba(255, 68, 68, 0.1);
+    border: 1px solid rgba(255, 68, 68, 0.3);
+    color: #ff6666;
+    font-size: 11px;
+    padding: 2px 8px;
+    cursor: pointer;
+    border-radius: 4px;
+}
+.dismiss-btn-mini:hover {
+    background: #ff4444;
+    color: #fff;
+}
+
+/* ==========================================
+   9. H 属性详情面板 (H Detail Modal)
+   ========================================== */
+.modal-h-detail {
+    background: #1a0b1a; /* 深紫色背景，区分于普通弹窗 */
+    border: 1px solid #ff99cc;
+    border-radius: 10px;
+    width: 750px; /* 较宽的面板以容纳描述文字 */
+    max-height: 85vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow: 0 0 40px rgba(255, 105, 180, 0.15);
+    overflow: hidden;
+}
+
+.h-detail-header {
+    background: linear-gradient(90deg, rgba(255, 153, 204, 0.2), transparent);
+    padding: 20px;
+    border-bottom: 1px solid rgba(255, 153, 204, 0.3);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.h-detail-title {
+    color: #ff99cc;
+    font-size: 1.4rem;
+    font-weight: bold;
+    letter-spacing: 2px;
+}
+
+.h-detail-body {
+    padding: 25px;
+    overflow-y: auto;
+    color: #eee;
+}
+
+.h-section {
+    margin-bottom: 25px;
+}
+
+.h-section-title {
+    color: #ffccdd;
+    font-size: 1.1rem;
+    border-left: 3px solid #ff99cc;
+    padding-left: 10px;
+    margin-bottom: 15px;
+    background: rgba(255, 153, 204, 0.05);
+    padding-top: 5px;
+    padding-bottom: 5px;
+}
+
+/* 属性行样式 */
+.h-stat-row {
+    background: rgba(255, 255, 255, 0.03);
+    margin-bottom: 10px;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.h-stat-header {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 6px;
+}
+
+.h-stat-label {
+    font-weight: bold;
+    color: #ffb3d9;
+}
+
+.h-stat-val {
+    color: #fff;
+    font-family: monospace;
+    font-size: 1.1em;
+}
+
+.h-stat-desc {
+    font-size: 0.9em;
+    color: #aaa;
+    font-style: italic;
+    line-height: 1.5;
+    padding-top: 5px;
+    border-top: 1px dashed rgba(255, 255, 255, 0.1);
+}
+
+/* 部位网格 */
+.h-parts-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 15px;
+}
+
+/* ==========================================
+   10. 核心目标编辑器 (Objective Editor)
+   ========================================== */
+.modal-objective {
+    background: #0f1525;
+    border: 1px solid var(--mana-blue);
+    width: 600px;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+}
+
+.obj-editor-body {
+    padding: 20px;
+}
+
+.obj-textarea {
+    width: 100%;
+    height: 150px;
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid #446;
+    color: #fff;
+    padding: 15px;
+    font-size: 1rem;
+    line-height: 1.6;
+    resize: none;
+    border-radius: 4px;
+    outline: none;
+    transition: border 0.3s;
+    box-sizing: border-box;
+}
+
+.obj-textarea:focus {
+    border-color: var(--mana-blue);
+    background: rgba(0, 0, 0, 0.7);
+}
+
+.obj-hint {
+    margin-top: 10px;
+    font-size: 0.85rem;
+    color: #668;
+}
+
+/* Tooltip 内部的技能预览块 */
+.t-skill-preview {
+    margin-top: 8px;
+    padding-top: 8px;
+    /* 增加一个深色背景块，区分物品描述和技能描述 */
+    background: rgba(0, 0, 0, 0.3); 
+    border-radius: 4px;
+    padding: 8px;
+}
+
+.tsp-line {
+    height: 1px;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    margin-bottom: 8px;
+    display: none; /* 有了背景块可能不需要分割线，暂时隐藏，可按需开启 */
+}
+
+.tsp-title {
+    margin-bottom: 6px;
+    display: flex;
+    align-items: baseline;
+}
+
+.tsp-label {
+    font-size: 12px;
+    color: #888;
+}
+
+.tsp-name {
+    color: #d4af37; /* 金色，强调技能名 */
+    font-weight: bold;
+    font-size: 13px;
+    margin-left: 4px;
+}
+
+.tsp-meta {
+    margin-bottom: 6px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* 复用 sk-element 但做微调 */
+.sk-element.small {
+    font-size: 10px;
+    padding: 1px 6px;
+    border-radius: 3px;
+    line-height: 1.4;
+    display: inline-block;
+}
+
+.tsp-cost {
+    font-size: 11px;
+    color: #66ccff; /* MP 蓝色 */
+}
+
+.tsp-desc {
+    font-size: 12px;
+    color: #bbb;
+    font-style: italic;
+    line-height: 1.4;
+}
+
+/* ==========================================
+   11. 玩家档案编辑器 (Player Profile Editor) [新增]
+   ========================================== */
+
+/* 继承自 .confirm-window 但针对双层输入做了优化 */
+.profile-editor-window {
+    background: #0f1525; /* 深蓝黑背景 */
+    border: 1px solid var(--mana-blue); /* 魔法蓝边框 */
+    box-shadow: 0 0 50px rgba(0, 0, 0, 0.9); /* 强阴影突出层级 */
+    display: flex;
+    flex-direction: column;
+    /* 宽度已在 template 中通过 style="width: 650px" 定义，此处可不写 */
+}
+
+.profile-editor-body {
+    /* 内部容器 */
+    color: #eee;
+}
+
+/* 输入框区块容器 */
+.pe-section {
+    position: relative;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 标题标签 */
+.pe-label {
+    font-size: 0.95rem;
+    letter-spacing: 1px;
+    text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+/* 针对两个输入框的微调 (基础样式继承自 .obj-textarea) */
+.pe-textarea-identity,
+.pe-textarea-objective {
+    display: block; /* 确保独占一行 */
+    border: 1px solid #445;
+    background: rgba(0, 0, 0, 0.4);
+    color: #ddd;
+    padding: 10px;
+    border-radius: 4px;
+    outline: none;
+    transition: all 0.3s ease;
+    resize: none; /* 禁止手动拖拽调整大小 */
+    font-family: inherit; /* 继承全局字体 */
+    line-height: 1.6;
+}
+
+/* 聚焦时的高亮效果 */
+.pe-textarea-identity:focus,
+.pe-textarea-objective:focus {
+    border-color: var(--mana-blue);
+    background: rgba(0, 0, 0, 0.6);
+    box-shadow: 0 0 15px rgba(102, 204, 255, 0.15); /* 柔和的发光 */
+    color: #fff;
+}
+
+/* ==========================================
+   12. 队友详情页 - 个人档案部分 (NPC Profile) [新增]
+   ========================================== */
+
+.profile-text-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.p-row {
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.05);
+    border-radius: 6px;
+    padding: 12px;
+}
+
+.p-label {
+    display: block;
+    font-size: 0.85rem;
+    color: #88aaff; /* 浅蓝色标签 */
+    margin-bottom: 6px;
+    font-weight: bold;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+}
+
+.p-content {
+    font-size: 0.95rem;
+    color: #ddd;
+    line-height: 1.5;
+    white-space: pre-wrap; /* 允许换行 */
+    padding-left: 4px;
+}

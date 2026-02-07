@@ -1,0 +1,71 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* 1. 基础深邃底色 */
+.void-background {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100vw; height: 100vh;
+    background: radial-gradient(circle at center, #1a1a2e 0%, #0a0a12 100%);
+    z-index: 2; /* 🟢 必须位于视频(1)之上，Phaser(5)之下 */
+    overflow: hidden;
+}
+
+/* 2. 动态魔力网格 */
+.mana-grid {
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background-image: 
+        linear-gradient(rgba(102, 204, 255, 0.05) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(102, 204, 255, 0.05) 1px, transparent 1px);
+    background-size: 50px 50px;
+    transform: perspective(500px) rotateX(45deg);
+    animation: grid-move 20s linear infinite;
+}
+
+@keyframes grid-move {
+    0% { transform: perspective(500px) rotateX(45deg) translateY(0); }
+    100% { transform: perspective(500px) rotateX(45deg) translateY(50px); }
+}
+
+/* 3. 悬浮魔力粒子 */
+.mana-particles::after {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background-image: radial-gradient(circle, #66ccff 1px, transparent 1px);
+    background-size: 100px 100px;
+    opacity: 0.1;
+    animation: particle-rise 10s linear infinite;
+}
+
+@keyframes particle-rise {
+    from { transform: translateY(0); }
+    to { transform: translateY(-100px); }
+}
+
+/* 4. 暗角遮罩 (营造深邃感) */
+.vignette-overlay {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    background: radial-gradient(circle, transparent 40%, rgba(0,0,0,0.8) 100%);
+    pointer-events: none;
+}

@@ -1,0 +1,197 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-choice.css - 柔和魔法版 */
+
+/* 1. 遮罩层：保持深邃背景 */
+/* 显式强调 pointer-events */
+.choice-overlay {
+    position: fixed !important;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 5000 !important; /* 确保在最上层 */
+    
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    
+    background: radial-gradient(circle at center, rgba(20, 20, 40, 0.9) 0%, rgba(5, 5, 10, 0.98) 100%);
+    
+    /* 🟢 关键：确保遮罩层本身捕获所有鼠标事件，防止击穿 */
+    pointer-events: auto !important; 
+}
+
+/* 2. 容器：柔和的魔法边框 */
+.choice-container {
+    width: 600px;
+    max-width: 85%;
+    min-height: 300px;
+    
+    /* 深蓝紫色背景 */
+    background: rgba(15, 15, 25, 0.95);
+    
+    /* 🟢 修改：柔和的魔法蓝边框，降低发光强度 */
+    border: 2px solid #6495ed !important; /* 矢车菊蓝 */
+    box-shadow: 
+        0 0 20px rgba(100, 149, 237, 0.4), /* 柔和外发光 */
+        inset 0 0 40px rgba(0, 0, 0, 0.8); /* 内部深邃感 */
+        
+    padding: 35px;
+    border-radius: 12px;
+    pointer-events: auto;
+    display: flex;
+    flex-direction: column;
+}
+
+/* 3. 标题：柔和微光 */
+.choice-header {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-bottom: 25px;
+}
+
+.choice-title {
+    font-size: 1.8em;
+    font-weight: bold;
+    letter-spacing: 3px;
+    text-transform: uppercase;
+    
+    /* 🟢 修改：使用米白色，配合柔和的紫色光晕 */
+    color: #e0e0e0 !important;
+    text-shadow: 0 0 15px rgba(138, 43, 226, 0.7);
+}
+
+.mana-symbol {
+    font-size: 1.6em;
+    margin: 0 20px;
+    color: #6495ed !important; /* 与边框呼应的蓝色 */
+    filter: drop-shadow(0 0 5px #6495ed);
+    animation: pulse 3s infinite ease-in-out; /* 减慢呼吸速度 */
+}
+
+/* 4. 状态栏：清晰但不刺眼 */
+.choice-stats {
+    display: flex;
+    justify-content: center;
+    gap: 60px;
+    margin-bottom: 30px;
+    padding: 12px;
+    
+    /* 🟢 修改：半透明深色背景，不再是死黑 */
+    background: rgba(0, 0, 0, 0.5);
+    border: 1px solid rgba(100, 149, 237, 0.3);
+    border-radius: 8px;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    font-family: 'Courier New', monospace;
+    font-weight: bold;
+    font-size: 1.4em; 
+}
+
+/* HP: 柔和红 */
+.stat-hp { 
+    color: #ff6b6b !important; 
+    text-shadow: 0 0 8px rgba(255, 107, 107, 0.5); 
+}
+
+/* MP: 柔和青 */
+.stat-mp { 
+    color: #4ecdc4 !important; 
+    text-shadow: 0 0 8px rgba(78, 205, 196, 0.5); 
+}
+
+.stat-label {
+    margin-right: 12px;
+    font-size: 0.7em;
+    color: #aaa !important; 
+    font-weight: normal;
+    letter-spacing: 2px;
+}
+
+/* 5. 文本内容 */
+.choice-line {
+    font-size: 1.2em;
+    line-height: 1.6;
+    margin-bottom: 15px;
+    color: #f0f0f0 !important; /* 米白文本，看着更舒服 */
+    text-shadow: 1px 1px 2px rgba(0,0,0,0.6);
+    animation: lineFadeIn 0.4s forwards ease-out;
+}
+
+/* 6. 选项按钮：统一大小 */
+.options-group {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    width: 100%; /* 确保容器占满 */
+}
+
+.rpg-choice-btn {
+    /* 🟢 关键修改：强制宽度统一 */
+    width: 100%;
+    box-sizing: border-box; /* 确保 padding 不会撑破宽度 */
+
+    background: linear-gradient(90deg, rgba(30, 30, 50, 0.8) 0%, rgba(20, 20, 35, 0.8) 100%);
+    border: 1px solid rgba(100, 149, 237, 0.3);
+    padding: 15px 20px;
+    color: #ccc;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-align: left;
+    font-size: 1.1em;
+    position: relative;
+    border-radius: 4px;
+}
+
+.rpg-choice-btn:hover {
+    background: linear-gradient(90deg, rgba(100, 149, 237, 0.2) 0%, rgba(30, 30, 50, 0.8) 100%);
+    border-color: #6495ed !important;
+    color: #fff !important;
+    box-shadow: 0 0 10px rgba(100, 149, 237, 0.4);
+    padding-left: 25px; /* 悬停时轻微位移，增加交互感 */
+}
+
+.btn-decoration {
+    margin-right: 12px;
+    color: #6495ed;
+    opacity: 0.7;
+}
+
+/* 动画 */
+@keyframes lineFadeIn {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+@keyframes pulse {
+    0%, 100% { opacity: 0.7; transform: scale(0.95); }
+    50% { opacity: 1; transform: scale(1.05); }
+}
+.tap-hint {
+    text-align: center;
+    font-size: 0.9em;
+    color: #888;
+    margin-top: 25px;
+    animation: blink 2s infinite;
+}
+@keyframes blink { 0%, 100% { opacity: 0.4; } 50% { opacity: 0.8; } }

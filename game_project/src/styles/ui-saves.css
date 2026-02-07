@@ -1,0 +1,159 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-saves.css */
+
+.save-manager-overlay {
+    position: fixed;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(0, 0, 0, 0.85);
+    backdrop-filter: blur(5px);
+    z-index: 200;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.save-container {
+    width: 900px;
+    max-width: 95vw; /* 🟢 适配小屏宽度 */
+    height: 85vh;    /* 🟢 使用视口高度，确保垂直方向不溢出 */
+    max-height: 900px; /* 限制最大高度 */
+    
+    background: rgba(20, 20, 25, 0.95);
+    border: 1px solid #444;
+    border-radius: 8px;
+    display: flex;
+    flex-direction: column;
+    padding: 30px;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+}
+
+.save-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    padding-bottom: 15px;
+    border-bottom: 1px solid #444;
+}
+
+.save-back-btn {
+    background: transparent;
+    border: 1px solid #666;
+    color: #aaa;
+    padding: 8px 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+.save-back-btn:hover { border-color: #fff; color: #fff; }
+
+.save-main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow: hidden;
+    min-height: 0; /* 🟢 关键：允许 Flex 子项小于内容高度，触发滚动条 */
+}
+
+/* 🟢 新增：中间列表的包裹层，负责占据剩余空间 */
+.save-list-section {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 0; /* 关键：传递高度限制给子元素 */
+}
+
+.save-mode-toggle {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.save-mode-btn {
+    flex: 1;
+    padding: 10px;
+    background: #111;
+    border: 1px solid #333;
+    color: #666;
+    cursor: pointer;
+}
+.save-mode-btn.active {
+    background: #333;
+    border-color: #d4af37;
+    color: #d4af37;
+}
+
+.save-scroll-container {
+    flex: 1;
+    overflow-y: auto; /* 🟢 开启垂直滚动 */
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 15px;
+    padding-right: 10px; /* 给滚动条留点位置 */
+    
+    /* 🟢 适配小屏幕：当宽度不够时自动切回单列 */
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+}
+
+/* 🟢 滚动条美化 (Webkit) */
+.save-scroll-container::-webkit-scrollbar {
+    width: 6px;
+}
+.save-scroll-container::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 3px;
+}
+.save-scroll-container::-webkit-scrollbar-thumb {
+    background: #444;
+    border-radius: 3px;
+}
+.save-scroll-container::-webkit-scrollbar-thumb:hover {
+    background: #d4af37;
+}
+
+.save-item {
+    background: #1a1a1a;
+    border: 1px solid #333;
+    padding: 15px;
+    cursor: pointer;
+    transition: all 0.2s;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+.save-item:hover { background: #252525; }
+.save-item.active { border-color: #d4af37; background: #2a2510; }
+.save-item.empty { opacity: 0.5; border-style: dashed; }
+
+.save-actions {
+    display: flex;
+    gap: 20px;
+    justify-content: flex-end;
+    
+    margin-top: 10px;
+    padding-top: 20px;
+    border-top: 1px solid #333;
+    
+    flex-shrink: 0; /* 🟢 关键：禁止压缩，确保永远显示在底部 */
+    background: rgba(20, 20, 25, 0.95); /* 防止透明穿透 */
+}
+
+.save-action-btn { width: auto; padding-left: 30px; padding-right: 30px; }

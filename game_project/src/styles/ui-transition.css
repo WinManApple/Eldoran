@@ -1,0 +1,146 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-transition.css */
+
+/* 全屏遮罩层 (最高层级) */
+.modal-mask {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.85); /* 深色半透明背景 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 9999; /* 🟢 必须高于其他所有 overlay (通常是 2000-3000) */
+    backdrop-filter: blur(5px); /* 磨砂玻璃效果 */
+    animation: fadeIn 0.3s ease-out;
+    /* 允许接收鼠标事件 */
+    pointer-events: auto; 
+}
+
+/* 弹窗容器 */
+.modal-box.cyber-theme {
+    width: 500px;
+    background: linear-gradient(135deg, #1a1a1a 0%, #0d0d0d 100%);
+    border: 2px solid #ffcc00; /* 警告色边框 */
+    box-shadow: 0 0 20px rgba(255, 204, 0, 0.3);
+    padding: 2px; /* 给内部内容留个边 */
+    position: relative;
+    clip-path: polygon(
+        0 0, 
+        100% 0, 
+        100% 85%, 
+        95% 100%, 
+        0 100%
+    ); /* 赛博切角风格 */
+}
+
+/* 标题栏 */
+.modal-header {
+    background: rgba(255, 204, 0, 0.1);
+    padding: 15px 20px;
+    display: flex;
+    align-items: center;
+    border-bottom: 1px solid #ffcc00;
+}
+
+.warning-icon {
+    font-size: 1.5rem;
+    margin-right: 10px;
+    color: #ffcc00;
+    animation: blink 1s infinite;
+}
+
+.modal-header h3 {
+    margin: 0;
+    color: #ffcc00;
+    font-family: 'Orbitron', sans-serif;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+/* 内容区域 */
+.modal-content {
+    padding: 30px 20px;
+    color: #e0e0e0;
+    font-size: 1.1rem;
+    text-align: center;
+    line-height: 1.6;
+}
+
+/* 按钮区域 */
+.modal-actions {
+    display: flex;
+    justify-content: space-around;
+    padding: 0 20px 25px 20px;
+    gap: 15px;
+}
+
+/* 按钮样式 (复用 rpg-btn 但微调) */
+.cyber-btn {
+    padding: 10px 25px;
+    border: none;
+    cursor: pointer;
+    font-weight: bold;
+    text-transform: uppercase;
+    transition: all 0.2s;
+    font-family: 'Rajdhani', sans-serif;
+}
+
+.cyber-btn.primary {
+    background: #ffcc00;
+    color: #000;
+    box-shadow: 0 0 10px rgba(255, 204, 0, 0.5);
+    clip-path: polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%);
+}
+
+.cyber-btn.primary:hover {
+    background: #ffdb4d;
+    box-shadow: 0 0 15px rgba(255, 204, 0, 0.8);
+    transform: translateY(-2px);
+}
+
+.cyber-btn.secondary {
+    background: transparent;
+    border: 1px solid #00d9ff;
+    color: #00d9ff;
+}
+
+.cyber-btn.secondary:hover {
+    background: rgba(0, 217, 255, 0.1);
+    box-shadow: 0 0 10px rgba(0, 217, 255, 0.3);
+}
+
+/* 🟢 强制提升存档界面的层级，确保它能覆盖在"确认弹窗"之上 */
+.save-manager-overlay {
+    z-index: 10000 !important; /* 必须比 .modal-mask (9999) 高 */
+}
+
+/* 动画 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: scale(0.95); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+@keyframes blink {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+}

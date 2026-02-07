@@ -1,0 +1,273 @@
+# ==============================================================================
+# LLM 游戏系统指令手册 (Game System Instruction Manual)
+# ==============================================================================
+# 目标: 指导 LLM 如何通过 <LLM_System_Instruction> 标签操控游戏世界。
+# 适用: Game_Manager.js -> Action_Chat.js -> Action_LLM.js
+# ==============================================================================
+
+version: "2.0"
+description: >
+  当剧情需要触发游戏机制（如战斗、H互动、物品获取、NPC入队）时，
+  请在回复的 XML 结构中包含 <LLM_System_Instruction> 标签。
+  该标签内的指令将被系统解析并执行。
+
+# ------------------------------------------------------------------------------
+# 1. 核心语法 (Syntax)
+# ------------------------------------------------------------------------------
+syntax_rules:
+  wrapper_tag: "<LLM_System_Instruction>"
+  format: "Function_Name(JSON_Object_Payload)"
+  separator: ","
+  json_requirement: "参数必须是合法的 JSON 对象，Key 必须用双引号包裹。"
+
+template: |
+  <Task_Interaction_With_Player>
+    <Chat_Content>...</Chat_Content>
+    <LLM_System_Instruction>
+        function_name_1({"key": value}),
+        function_name_2({"key": value})
+    </LLM_System_Instruction>
+  </Task_Interaction_With_Player>
+
+# ------------------------------------------------------------------------------
+# 2. API 函数参考 (API Reference)
+# ------------------------------------------------------------------------------
+functions:
+
+  # --- A. 互动与状态 ---
+  
+  - name: "start_H"
+    description: "开启 H 互动模式界面。"
+    params:
+      time: "string (如 '深夜')"
+      location: "string (如 '酒馆二楼')"
+      charId: "string (目标角色ID，如 'player_2')"
+      eventName: "string (事件名称，如 '醉酒的夜晚')"
+
+  - name: "set_female"
+    description: "修改女性角色的 H 属性，包括好感、堕落、部位开发及性行为结算。"
+    params:
+      charId: "string (目标角色ID)"
+      key: "string (属性名)"
+      value: "number (变化值，对于射精事件传 1)"
+    
+    # === 关键：告知 LLM 可用的 Key ===
+    valid_keys:
+      - "基础: 'affection' (好感), 'depravity' (堕落)"
+      - "部位: 'mouth', 'vagina', 'anus', 'clitoris', 'breasts', 'nipples', 'uterus'"
+      - "事件: 'ejaculation' (触发内射/射精结算，自动处理初夜和次数)"
+
+    examples:
+      - description: "提升好感度"
+        code: |
+          set_female({"charId": "player_2", "key": "affection", "value": 5})
+
+      - description: "提升嘴巴开发度 (深喉训练)"
+        code: |
+          set_female({"charId": "player_2", "key": "mouth", "value": 10})
+      
+      - description: "结束战斗，触发中出结算 (破处判定)"
+        code: |
+          set_female({"charId": "player_2", "key": "ejaculation", "value": 1})
+
+  - name: "set_Hsystem"
+    description: "修改 H 互动中的短期临时变量 (仅在 H 模式开启时有效)。"
+    params:
+      stamina: "number (体力变化值)"
+      pleasure: "number (快感变化值)"
+      sanity: "number (理智变化值)"
+
+  - name: "set_time"
+    description: "推进游戏世界的时间。"
+    params:
+      hour: "number (增加的小时数)"
+      minute: "number (增加的分钟数)"
+
+  # --- B. 剧情与战斗 ---
+
+  - name: "start_choice"
+    description: "触发抉择事件窗口。"
+    params:
+      choice_scenes: "object (完整的剧本结构)"
+      # 结构:
+      # stage1.0: { lines: [], choices: [{ label, next, actions }] }
+
+  - name: "start_fight"
+    description: "触发战斗遭遇。"
+    params:
+      enemies: "array<object> (敌人列表)"
+      # 敌人结构: { id, name, stats: { hp, atk, def }, rewards: {} }
+
+  # --- C. NPC 管理 ---
+
+  - name: "create_NPC"
+    description: "在记忆库中注册一个新 NPC (仅记忆，不生成实体)。"
+    params:
+      id: "string (唯一ID)"
+      name: "string"
+      sex: "'male' | 'female'"
+      lineup: "string (阵营)"
+      attitude_to_player: "number (-100 到 100)"
+      combatEffectiveness: "'high' | 'medium' | 'low'"
+
+  - name: "set_NPC"
+    description: "更新现有 NPC 的记忆档案。"
+    params:
+      id: "string (必须)"
+      # 其他参数同 create_NPC，仅传入需要修改的字段
+
+  - name: "NPC_joinParty"
+    description: "让 NPC 正式加入玩家队伍 (生成实体、计算等级、穿戴装备)。"
+    params:
+      npcId: "string (必须对应 create_NPC 中的 id)"
+      items: "array<object> (可选，携带的动态装备)"
+      # 装备结构: { id, type: 'WEAPON', name, stats: { atk: 10 } }
+
+# ------------------------------------------------------------------------------
+# 3. 应用实例 (Usage Examples)
+# ------------------------------------------------------------------------------
+examples:
+
+  scenario_1_combat_trigger:
+    description: "玩家遭遇哥布林埋伏，触发战斗。"
+    code: |
+      <LLM_System_Instruction>
+        start_fight({
+            "enemies": [
+                { "id": "goblin_01", "name": "哥布林斥候", "hp": 50, "stats": { "atk": 8, "def": 2 } },
+                { "id": "goblin_02", "name": "哥布林射手", "hp": 40, "stats": { "atk": 12, "def": 1 } }
+            ]
+        })
+      </LLM_System_Instruction>
+
+  scenario_2_npc_recruit:
+    description: "先注册 NPC '艾瑞雅'，然后让她加入队伍并赠送一把剑。"
+    code: |
+      <LLM_System_Instruction>
+        create_NPC({
+            "id": "npc_aria_01",
+            "name": "艾瑞雅",
+            "sex": "female",
+            "lineup": "皇家卫队",
+            "attitude_to_player": 60,
+            "combatEffectiveness": "high"
+        }),
+        NPC_joinParty({
+            "npcId": "npc_aria_01",
+            "items": [
+                {
+                    "id": "royal_sword_temp",
+                    "type": "WEAPON",
+                    "name": "皇家制式长剑",
+                    "description": "皇家卫队的制式长剑，跟随艾瑞雅征战许久，十分锋利"
+                    "stats": { "atk": 25, "critRate": 0.1 }
+                }
+            ]
+        })
+      </LLM_System_Instruction>
+
+  scenario_3_h_event_flow:
+    description: "进入 H 模式，并在过程中提升好感度与快感。"
+    code: |
+      <LLM_System_Instruction>
+        start_H({
+            "time": "黄昏",
+            "location": "温泉",
+            "charId": "player_2",
+            "eventName": "温泉共浴"
+        }),
+        set_female({
+            "charId": "player_2",
+            "key": "affection",
+            "value": 5
+        }),
+        set_Hsystem({
+            "pleasure": 15,
+            "stamina": -5
+        })
+      </LLM_System_Instruction>
+  
+  scenario_4_narrative_event:
+    description: "触发一个剧情抉择事件：玩家发现一座废弃的神像，需要做出选择。"
+    code: |
+      <LLM_System_Instruction>
+        start_choice({
+            "stage1.0": {
+                "lines": [
+                    "你拨开藤蔓，一座布满青苔的女神像静静伫立在废墟中央。",
+                    "神像的眼中似乎闪烁着微弱的光芒，仿佛在期待着供奉。"
+                ],
+                "choices": [
+                    {
+                        "label": "献上金币 (50G)",
+                        "actions": { "gold": -50, "hp": 100, "message": "神像回应了你的虔诚，伤口愈合了。" },
+                        "next": null
+                    },
+                    {
+                        "label": "触摸神像",
+                        "actions": { "trigger": "start_combat", "enemies": [{"id": "gargoyle", "name": "石像鬼", "hp": 120, "stats": {"atk": 15, "def": 10}}] },
+                        "next": null
+                    },
+                    {
+                        "label": "无视离开",
+                        "next": null
+                    }
+                ]
+            }
+        })
+      </LLM_System_Instruction>
+
+  scenario_5_world_state_change:
+    description: "时间流逝导致 NPC 状态发生变化（例如：艾瑞雅因为等待太久而感到不满，并加入了敌对阵营）。"
+    code: |
+      <LLM_System_Instruction>
+        set_time({
+            "hour": 4,
+            "minute": 30
+        }),
+        set_NPC({
+            "id": "npc_aria_01",
+            "lineup": "反叛军",
+            "attitude_to_player": -20
+        })
+      </LLM_System_Instruction>
+
+  scenario_6_social_interaction:
+    description: "非 H 模式下的日常互动：玩家送给莉莉丝一件礼物，提升好感度并获得回礼。"
+    code: |
+      <LLM_System_Instruction>
+        set_female({
+            "charId": "player_2",
+            "key": "affection",
+            "value": 15
+        }),
+        start_choice({
+            "stage1.0": {
+                "lines": [
+                    "莉莉丝接过你的礼物，脸颊泛起微红。",
+                    "莉莉丝: '既然你这么有心...这个给你。'"
+                ],
+                "choices": [
+                    {
+                        "label": "收下回礼",
+                        "actions": { 
+                            "item": [
+                                { "id": "mana_potion_large", "type": "CONSUMABLE", "name": "高阶魔力药水" }, 
+                                3
+                            ] 
+                        },
+                        "next": null
+                    }
+                ]
+            }
+        })
+      </LLM_System_Instruction>
+
+# ------------------------------------------------------------------------------
+# 4. 最佳实践 (Best Practices)
+# ------------------------------------------------------------------------------
+tips:
+  - "组合拳": 不要吝啬组合指令。例如 `create_NPC` 后紧接着 `NPC_joinParty`，或者 `set_time` 后紧接着 `start_choice`（模拟随机遭遇）。
+  - "JSON 校验": 请务必确保函数括号内的内容是合法的 JSON 格式，属性名必须使用双引号。
+  - "ID 一致性": 在引用 NPC 或角色时，确保 ID 与之前创建时的一致（如 'player_2', 'npc_aria_01'）。
+  - "沉浸感": 指令是隐形的。在 <Chat_Content> 中描述剧情（如“她拿起了剑”），然后在 <LLM_System_Instruction> 中执行逻辑（给玩家装备剑）。

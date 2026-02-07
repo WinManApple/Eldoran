@@ -1,0 +1,20 @@
+# Python 垃圾文件
+__pycache__/
+*.py[cod]
+
+# VS Code 个人配置
+.vscode/
+
+# Node/JS 依赖包 (如果你没用 npm，这行也没副作用)
+node_modules/
+
+# 系统垃圾文件
+.DS_Store
+Thumbs.db
+
+# 错误日志 (通常不需要上传调试日志)
+*.log
+npm-debug.log*
+
+# 这里的逻辑是：
+# .css, .html, .js, .py, .obj (若是模型) 都会被自动包含，因为它们不在这个名单里。

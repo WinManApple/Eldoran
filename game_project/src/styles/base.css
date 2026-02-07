@@ -1,0 +1,102 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* =========================================
+   1. 基础环境 (Base & Environment)
+   包含：全局重置、视频背景、核心容器层级管理、Vue动画工具
+   ========================================= */
+
+
+   :root {
+    --bg-void: #0a0a12;        /* 战斗界面核心背景色 */
+    --mana-blue: #66ccff;      /* 核心霓虹蓝 */
+    --mana-glow: 0 0 15px rgba(102, 204, 255, 0.4);
+    --mana-border: 1px solid rgba(102, 204, 255, 0.3);
+}
+
+
+/* --- 基础重置 --- */
+body, html {
+    margin: 0;
+    padding: 0;
+    width: 100%;
+    height: 100%;
+    overflow: hidden; /* 防止出现滚动条 */
+    font-family: 'Microsoft YaHei', sans-serif;
+    color: white;
+    background-color: var(--bg-void); /* 改为深蓝黑 */
+}
+
+/* Vue加载前隐藏 (防止花屏) */
+[v-cloak] { display: none; }
+
+/* --- 视频背景与遮罩层 (Layer: 1) --- */
+.background-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1; /* 最底层 */
+    pointer-events: none; /* 鼠标穿透，点击事件交给下层 */
+}
+
+.bg-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* 确保填满屏幕不变形 */
+}
+
+.bg-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    /* 基础暗角效果 */
+    background: radial-gradient(circle, rgba(0,0,0,0.2) 0%, rgba(0,0,0,0.8) 100%);
+    /* 扫描线纹理叠加 (增强CRT复古感) */
+    background-image: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), 
+                      linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+    background-size: 100% 2px, 3px 100%;
+}
+
+/* --- 核心容器层级管理 --- */
+
+/* Phaser 游戏画布容器 (Layer: 5) */
+#game-container {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    z-index: 5; /* 确保在背景之上，UI之下 */
+    pointer-events: auto;
+}
+
+/* Vue UI 根容器 (Layer: 10) */
+#app {
+    position: relative; 
+    width: 100%; height: 100%;
+    /* 🟢 确保这里没有 z-index: 10，让子元素自由排序 */
+    pointer-events: none; 
+}
+
+/* --- 通用工具类 & 动画 --- */
+
+/* Vue 过渡动画: 淡入淡出 */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }

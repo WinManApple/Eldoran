@@ -1,0 +1,865 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* 增加定位和防穿透 */
+.container {
+    /* 🟢 保持原有的布局属性 */
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr;
+    grid-template-rows: auto 1fr auto;
+    gap: 10px;
+    height: 100%; 
+    
+    /* 🟢 修改：使用相对单位 padding */
+    padding: 2vh 2vw; 
+
+    /* 🟢 核心新增：自适应字体基准 */
+    /* 解释：字体最小12px，首选屏幕高度的1.6%，最大24px。这会让所有 em 单位随屏幕缩放 */
+    font-size: clamp(12px, 1.6vh, 24px);
+
+    /* 🟢 保持之前的防穿透设置 (如有) */
+    position: relative;
+    background-color: #050508;
+    pointer-events: auto;
+    z-index: 2000;
+}
+
+/* 顶部区域 - 战斗状态 */
+.battle-header {
+    grid-column: 1 / span 3;
+    background-color: #111122;
+    border: 1px solid #333355;
+    padding: 10px;
+    border-radius: 5px;
+    text-align: center;
+    display: flex;
+    justify-content: space-around;
+    align-items: center;
+}
+
+.battle-info {
+    font-size: 1.1em;
+    color: #88aaff;
+}
+
+.turn-counter {
+    font-size: 1.2em;
+    font-weight: bold;
+    color: #ffcc44;
+    background-color: rgba(0, 0, 0, 0.3);
+    padding: 5px 25px; /* 增加左右内边距，让它变宽 */
+    border-radius: 20px;
+    white-space: nowrap; /* 核心：强制文字不换行 */
+    min-width: 120px;    /* 核心：给一个最小宽度，保证它够宽 */
+    text-align: center;  /* 文字居中 */
+}
+
+/* 左侧区域 - 玩家队伍 */
+.player-team {
+    background-color: #111122;
+    border: 1px solid #333355;
+    padding: 15px;
+    border-radius: 5px;
+    overflow-y: auto;
+}
+
+.team-header {
+    color: #66aaff;
+    font-size: 1.2em;
+    margin-bottom: 15px;
+    border-bottom: 1px solid #333355;
+    padding-bottom: 5px;
+    text-align: center;
+}
+
+.player-card {
+    position: relative; /* <--- 必须加上这一行！ */
+    background-color: #222233;
+    border: 1px solid #445577;
+    border-radius: 8px;
+    padding: 15px;
+    margin-bottom: 15px;
+    transition: all 0.3s;
+}
+
+.player-card.active {
+    border-color: #66ccff;
+    box-shadow: 0 0 10px rgba(102, 204, 255, 0.5);
+    background-color: #223344;
+}
+
+.player-name {
+    color: #66ccff;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.player-class {
+    color: #aaaacc;
+    font-size: 0.9em;
+    font-style: italic;
+}
+
+.hp-bar-container, .mp-bar-container {
+    margin: 8px 0;
+}
+
+.hp-bar, .mp-bar {
+    height: 20px;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: #222233;
+    position: relative;
+}
+
+.hp-fill {
+    height: 100%;
+    background-color: #44aa66;
+    transition: width 0.5s ease;
+}
+
+.mp-fill {
+    height: 100%;
+    background-color: #6666ff;
+    transition: width 0.5s ease;
+}
+
+.hp-text, .mp-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9em;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.player-stats {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #aaaacc;
+}
+
+.stat-row {
+    display: flex;
+    justify-content: space-between;
+    margin-bottom: 3px;
+}
+
+.buff-list {
+    margin-top: 10px;
+    font-size: 0.85em;
+    color: #88cc88;
+}
+
+/* 中央区域 - 战斗核心 */
+.battle-area {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    gap: 10px;
+}
+
+.enemy-team {
+    background-color: #111122;
+    border: 1px solid #553333;
+    border-radius: 5px;
+    padding: 15px;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-around;
+    align-items: center;
+    gap: 15px;
+}
+
+.enemy-card {
+    background-color: #332222;
+    border: 1px solid #994444;
+    border-radius: 8px;
+    padding: 15px;
+    
+    width: 30%;
+    /* 🟢 修改：使用 em 单位，随字体缩放高度 */
+    min-height: 12em; 
+    
+    transition: all 0.3s;
+    display: flex;
+    flex-direction: column;
+}
+
+.enemy-card.active {
+    border-color: #ff6666;
+    box-shadow: 0 0 10px rgba(255, 102, 102, 0.5);
+    background-color: #442222;
+}
+
+.enemy-name {
+    color: #ff6666;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    text-align: center;
+}
+
+.enemy-hp-bar {
+    height: 20px;
+    border-radius: 3px;
+    overflow: hidden;
+    background-color: #332222;
+    position: relative;
+    margin: 10px 0;
+}
+
+.enemy-hp-fill {
+    height: 100%;
+    background-color: #ff4444;
+    transition: width 0.5s ease;
+}
+
+.enemy-hp-text {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9em;
+    font-weight: bold;
+    color: white;
+    text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.enemy-stats {
+    margin-top: 10px;
+    font-size: 0.9em;
+    color: #ccaaaa;
+    flex-grow: 1;
+}
+
+.enemy-debuff {
+    color: #ff8888;
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+.battle-log {
+    background-color: #0a0a0a;
+    border: 1px solid #333333;
+    border-radius: 5px;
+    padding: 15px;
+    overflow-y: auto;
+    font-size: 0.95em;
+    max-height: 300px;
+}
+
+.log-entry {
+    margin-bottom: 8px;
+    padding: 5px 0;
+    border-bottom: 1px dotted #333333;
+    animation: fadeIn 0.3s ease;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+.log-player {
+    color: #66ccff;
+}
+
+.log-enemy {
+    color: #ff6666;
+}
+
+.log-system {
+    color: #aaaaaa;
+    font-style: italic;
+}
+
+.log-damage {
+    color: #ff8844;
+    font-weight: bold;
+}
+
+.log-heal {
+    color: #44ff88;
+}
+
+.log-critical {
+    color: #ffcc00;
+    font-weight: bold;
+    animation: pulse 0.5s;
+}
+
+@keyframes pulse {
+    0% { opacity: 0.7; }
+    50% { opacity: 1; }
+    100% { opacity: 0.7; }
+}
+
+.log-dot {
+    color: #ff66aa;
+}
+
+.log-buff {
+    color: #88cc88;
+}
+
+/* 右侧区域 - 行动面板 */
+.action-panel {
+    background-color: #111122;
+    border: 1px solid #333355;
+    border-radius: 5px;
+    padding: 15px;
+    overflow-y: auto;
+}
+
+.action-section {
+    margin-bottom: 20px;
+}
+
+.section-title {
+    color: #66aaff;
+    font-size: 1.1em;
+    margin-bottom: 10px;
+    border-bottom: 1px solid #333355;
+    padding-bottom: 5px;
+}
+
+.action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+}
+
+.action-button {
+    background-color: #223355;
+    color: #aaccff;
+    border: 1px solid #445577;
+    padding: 12px 10px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 0.95em;
+    transition: all 0.2s;
+    text-align: center;
+}
+
+.action-button:hover {
+    background-color: #334477;
+    transform: translateY(-2px);
+}
+
+.action-button:active {
+    transform: translateY(0);
+}
+
+.action-button:disabled {
+    background-color: #222233;
+    color: #666677;
+    cursor: not-allowed;
+    transform: none;
+    border-color: #333344;
+}
+
+.attack-btn {
+    background-color: #552222;
+    border-color: #994444;
+    color: #ffaaaa;
+}
+
+.skill-btn {
+    background-color: #225522;
+    border-color: #449944;
+    color: #aaffaa;
+}
+
+.item-btn {
+    background-color: #333322;
+    border-color: #666644;
+    color: #ffffaa;
+}
+
+.defend-btn {
+    background-color: #222255;
+    border-color: #444477;
+    color: #aaaaff;
+}
+
+.flee-btn {
+    background-color: #553355;
+    border-color: #884488;
+    color: #ffaaff;
+}
+
+/* 技能选择面板 */
+.skill-panel, .item-panel {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #111133;
+    border: 2px solid #444477;
+    padding: 20px;
+    border-radius: 8px;
+
+    /* 🟢 修改：宽度自适应，最大不超过屏幕的 90% 或 1000px */
+    width: min(90vw, 1000px);
+    /* 🟢 新增：防止高度溢出屏幕，增加滚动支持 */
+    max-height: 85vh;
+    display: flex; /* 建议改为 flex 以便内部布局 */
+    flex-direction: column;
+
+    /* 保持高层级 */
+    z-index: 3000;
+    display: none;
+    box-shadow: 0 0 50px rgba(0,0,0,0.8);
+}
+
+.skill-panel.active, .item-panel.active {
+    display: block;
+}
+
+.skill-panel h3, .item-panel h3 {
+    color: #66ccff;
+    margin-bottom: 15px;
+    text-align: center;
+}
+
+/* 修改后 */
+.skill-list, .item-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); /* 🟢 智能列宽：空间不够自动换行 */
+    gap: 10px;
+    /* 🟢 修改：高度由父容器决定，不再死板限制 */
+    max-height: 60vh; 
+    overflow-y: auto;
+}
+.skill-option, .item-option {
+    background-color: #222244;
+    border: 1px solid #444466;
+    padding: 15px;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.skill-option:hover, .item-option:hover {
+    background-color: #333366;
+}
+
+.skill-name, .item-name {
+    color: #88ccff;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.skill-desc, .item-desc {
+    color: #aaaacc;
+    font-size: 0.9em;
+    margin-bottom: 5px;
+}
+
+.skill-cost, .item-count {
+    color: #8888ff;
+    font-size: 0.85em;
+    margin-top: 5px;
+}
+
+.close-panel {
+    position: absolute;
+    top: 10px;
+    right: 15px;
+    background: none;
+    border: none;
+    color: #cc6666;
+    font-size: 1.5em;
+    cursor: pointer;
+}
+
+/* 战斗结束面板 */
+.battle-end {
+    position: fixed;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background-color: #111122;
+    border: 3px solid #6666aa;
+    padding: 30px;
+    border-radius: 10px;
+
+    /* 🟢 修改：更智能的宽度策略 */
+    width: min(80vw, 700px); 
+    max-height: 90vh; /* 防止太高溢出 */
+    overflow-y: auto; /* 内容多时可滚动 */
+
+    z-index: 3100; 
+    
+    text-align: center;
+    display: none;
+    box-shadow: 0 0 100px rgba(0,0,0,0.9);
+}
+
+.battle-end.active {
+    display: block;
+}
+
+.battle-end h2 {
+    color: #ffcc44;
+    margin-bottom: 20px;
+}
+
+.battle-end p {
+    color: #cccccc;
+    margin-bottom: 15px;
+}
+
+.restart-button {
+    background-color: #336633;
+    color: #ccffcc;
+    border: none;
+    padding: 12px 25px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 1.1em;
+    margin-top: 10px;
+}
+
+/* 响应式设计 */
+@media (max-width: 1024px) {
+    .container {
+        grid-template-columns: 1fr;
+        grid-template-rows: auto auto auto auto;
+        height: auto;
+    }
+    
+    .battle-header, .player-team, .battle-area, .action-panel {
+        grid-column: 1;
+    }
+    
+    .battle-area {
+        grid-template-rows: auto auto;
+    }
+    
+    .enemy-card {
+        width: 45%;
+    }
+}
+
+@media (max-width: 768px) {
+    .action-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .enemy-card {
+        width: 100%;
+    }
+    
+    .skill-list, .item-list {
+        grid-template-columns: 1fr;
+    }
+}
+
+/* === 自定义滚动条样式 === */
+::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: #050508; 
+    border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+    background: #333355; 
+    border-radius: 4px;
+    border: 1px solid #0a0a12;
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: #555588; 
+}
+
+.battle-log, .player-team, .action-panel, .skill-list, .item-list {
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.5); 
+}
+
+/* === 新增：UI 结构改造样式 (Step 1) === */
+
+/* 1. 行动顺序条 (Timeline) */
+.timeline-container {
+    width: 100%;
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #333355;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+}
+
+.timeline-label {
+    font-size: 0.8em;
+    color: #666688;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.timeline {
+    display: flex;
+    gap: 8px;
+    overflow-x: auto;
+    width: 100%;
+    justify-content: center; /* 居中显示，如果角色多会自动向左延伸 */
+    padding-bottom: 5px;
+    min-height: 40px;
+}
+
+/* 行动条上的小卡片 */
+.timeline-item {
+    background: #1a1a25;
+    border: 1px solid #333344;
+    padding: 4px 8px;
+    border-radius: 3px;
+    font-size: 0.85em;
+    color: #8888aa;
+    white-space: nowrap;
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    position: relative;
+    opacity: 0.7; /* 默认稍微暗淡一点，表示未来 */
+}
+
+/* 当前正在下指令/行动的角色 */
+.timeline-item.active {
+    opacity: 1;
+    transform: scale(1.1);
+    z-index: 2;
+    border-color: #ffffff;
+    box-shadow: 0 0 8px rgba(255, 255, 255, 0.3);
+}
+
+/* 玩家和敌人的颜色区分 */
+.timeline-item.player { border-left: 3px solid #66ccff; color: #cceeff; }
+.timeline-item.enemy { border-left: 3px solid #ff6666; color: #ffcccc; }
+
+/* 2. 回合开始按钮 (Command Phase 结束时显示) */
+.start-turn-btn {
+    display: none; /* 默认隐藏，JS控制显示 */
+    width: 100%;
+    padding: 15px;
+    margin-top: 10px;
+    background: linear-gradient(to bottom, #aa6600, #884400); /* 金橙色战斗风格 */
+    color: #ffffff;
+    border: 1px solid #ffcc00;
+    border-radius: 5px;
+    font-size: 1.1em;
+    font-weight: bold;
+    cursor: pointer;
+    text-transform: uppercase;
+    box-shadow: 0 4px 6px rgba(0,0,0,0.3);
+    animation: pulse-gold 2s infinite;
+}
+
+.start-turn-btn:hover {
+    background: linear-gradient(to bottom, #cc8800, #aa6600);
+    transform: translateY(-1px);
+}
+
+@keyframes pulse-gold {
+    0% { box-shadow: 0 0 0 0 rgba(255, 170, 0, 0.4); }
+    70% { box-shadow: 0 0 0 10px rgba(255, 170, 0, 0); }
+    100% { box-shadow: 0 0 0 0 rgba(255, 170, 0, 0); }
+}
+
+/* 待命状态标记 (用于头像上显示 "Ready") */
+.status-badge {
+    position: absolute;
+    top: -5px;
+    right: -5px;
+    background: #00cc00;
+    color: white;
+    font-size: 0.7em;
+    padding: 2px 4px;
+    border-radius: 4px;
+    display: none;
+}
+.player-card.command-ready .status-badge { display: block; }
+
+/* === 新增：受击抖动特效 === */
+@keyframes shake-animation {
+    0% { transform: translateX(0); }
+    20% { transform: translateX(-5px); filter: brightness(2) saturate(0); } /* 变亮闪白 */
+    40% { transform: translateX(5px); }
+    60% { transform: translateX(-5px); }
+    80% { transform: translateX(5px); }
+    100% { transform: translateX(0); filter: none; }
+}
+
+.shake-effect {
+    animation: shake-animation 0.4s ease-in-out;
+    border-color: #ff3333 !important; /* 受击时边框变红 */
+    box-shadow: 0 0 15px rgba(255, 50, 50, 0.6) !important;
+}
+
+/* === 新增：结算面板优化 === */
+
+/* 统计信息微调 */
+.battle-stats {
+    background-color: #1a1a25;
+    padding: 10px;
+    border-radius: 5px;
+    margin: 10px 0;
+    text-align: left;
+    font-size: 0.9em;
+    color: #aaaaaa;
+}
+
+/* 战利品区域 */
+.loot-section {
+    margin: 15px 0;
+    text-align: left;
+}
+
+.loot-section h3 {
+    color: #ffcc44;
+    font-size: 1em;
+    margin-bottom: 8px;
+    border-bottom: 1px dashed #444466;
+    padding-bottom: 3px;
+}
+
+.loot-grid {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    max-height: 150px;
+    overflow-y: auto;
+}
+
+.loot-item {
+    display: flex;
+    justify-content: space-between;
+    background-color: #222233;
+    padding: 5px 10px;
+    border-radius: 3px;
+    font-size: 0.9em;
+    color: #aaccff;
+}
+
+.loot-item.gold { color: #ffd700; }
+.loot-item.exp { color: #cc88ff; }
+.loot-item.item { color: #88ffcc; }
+
+/* 底部按钮组 */
+.end-btn-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    margin-top: 20px;
+}
+
+/* 针对特定按钮的样式覆盖 */
+.confirm-btn {
+    background-color: #225522;
+    border-color: #44aa44;
+    color: #ccffcc;
+    width: 100%;
+}
+
+.restart-btn {
+    background-color: #552222;
+    border-color: #aa4444;
+    color: #ffcccc;
+}
+
+/* === 新增：目标选择模式视觉反馈 === */
+
+/* 当处于“选敌模式”时，敌人卡片开启交互效果 */
+body.targeting-enemy .enemy-card {
+    cursor: crosshair; /* 鼠标变为准星 */
+    transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275), box-shadow 0.2s; /* 弹性动画 */
+}
+
+/* 悬停时的变大变红特效 */
+body.targeting-enemy .enemy-card:hover {
+    transform: scale(1.08); /* 放大 8% */
+    border-color: #ff3333;  /* 边框变红 */
+    box-shadow: 0 0 25px rgba(255, 50, 50, 0.6); /* 红色发光 */
+    z-index: 10; /* 确保浮起时遮挡周围元素 */
+}
+
+/* 同理：当处于“选队友模式”时 (如治疗术) */
+body.targeting-ally .player-card {
+    cursor: crosshair;
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+
+body.targeting-ally .player-card:hover {
+    transform: scale(1.05);
+    border-color: #33ff33; /* 绿色边框 */
+    box-shadow: 0 0 25px rgba(50, 255, 50, 0.6); /* 绿色发光 */
+    z-index: 10;
+}
+
+/* === 新增：敌人描述 Tooltip === */
+
+/* 确保父元素允许 tooltip 溢出显示 (如果之前有 overflow:hidden 需要注意，这里默认 card 没有) */
+.enemy-card {
+    position: relative; /* 确保绝对定位参照于卡片 */
+}
+
+.enemy-desc-tooltip {
+    position: absolute;
+    top: 105%; /* 位于卡片底部下方 5% 的位置 */
+    left: 0;
+    width: 100%; /* 宽度与卡片一致 */
+    
+    background-color: rgba(10, 10, 16, 0.95); /* 深色半透明背景 */
+    color: #cccccc;
+    font-size: 0.85em;
+    padding: 10px;
+    border: 1px solid #553333;
+    border-radius: 5px;
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.5);
+    
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    
+    z-index: 100; /* 确保浮在最上层 */
+    pointer-events: none; /* 让鼠标穿透，不影响点击卡片 */
+}
+
+/* 悬停时显示 */
+.enemy-card:hover .enemy-desc-tooltip {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}

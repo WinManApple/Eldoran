@@ -1,0 +1,718 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-custom_opening.css */
+
+/* =========================================
+   根容器：全屏覆盖、防击穿
+   ========================================= */
+.co-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 2100; /* 略高于 CharacterCreationOverlay (2000) */
+    
+    /* 视觉背景：深渊虚空感 (比普通界面更深沉) */
+    background: radial-gradient(circle at center, #1a1a2e 0%, #000000 100%);
+    
+    /* 核心交互：允许鼠标操作，拦截点击穿透 */
+    pointer-events: auto;
+    
+    /* 布局 */
+    display: flex;
+    flex-direction: column;
+    color: #e0e0e0;
+    font-family: "Cinzel", "Microsoft YaHei", serif;
+}
+
+/* =========================================
+   1. 顶部标题区
+   ========================================= */
+.co-header {
+    text-align: center;
+    padding: 1.5rem 0;
+    background: linear-gradient(to bottom, rgba(0,0,0,0.95), transparent); /* 加深背景防透 */
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    flex-shrink: 0;
+    
+    /* 🟢 [新增] 确保头部在层级最上，防止内容被遮挡时的视觉混乱 */
+    position: relative;
+    z-index: 10;
+}
+
+.co-header h2 {
+    margin: 0;
+    font-size: 2.2rem;
+    color: #00d2ff; /* 区别于主流程的金色，使用“科技/虚空”蓝 */
+    text-shadow: 0 0 15px rgba(0, 210, 255, 0.4);
+    letter-spacing: 4px;
+    text-transform: uppercase;
+}
+
+.co-subtitle {
+    font-size: 0.9rem;
+    color: #8899a6;
+    margin-top: 0.5rem;
+    font-style: italic;
+    min-height: 1.2em;
+}
+
+/* =========================================
+   2. 主体区域 (自适应布局)
+   ========================================= */
+.co-body {
+    flex: 1;
+    overflow: hidden; /* 内部滚动 */
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding: 1rem 2rem;
+}
+
+/* --- STATE 1: 编辑容器 (两列布局) --- */
+.co-edit-container {
+    display: flex;
+    width: 100%;
+    max-width: 1200px;
+    height: 100%;
+    gap: 2rem;
+}
+
+.co-column {
+    flex: 1;
+    background: rgba(255, 255, 255, 0.02);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 6px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    overflow-y: auto; /* 允许列内滚动 */
+    transition: box-shadow 0.3s;
+}
+
+.co-column:hover {
+    background: rgba(255, 255, 255, 0.04);
+    box-shadow: 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* 滚动条美化 */
+.co-column::-webkit-scrollbar { width: 4px; }
+.co-column::-webkit-scrollbar-thumb { background: #334; border-radius: 2px; }
+
+.co-section-title {
+    font-size: 1.1rem;
+    color: #00d2ff;
+    border-bottom: 1px solid rgba(0, 210, 255, 0.2);
+    padding-bottom: 0.5rem;
+    margin-bottom: 1.5rem;
+    font-weight: bold;
+}
+
+/* 表单组件 */
+.co-form-group {
+    margin-bottom: 1.5rem;
+}
+
+.co-form-group label {
+    display: block;
+    font-size: 0.85rem;
+    color: #aaa;
+    margin-bottom: 0.5rem;
+}
+
+.req-star { color: #ff4757; margin-left: 4px; }
+
+/* 输入框统一风格 */
+.co-input, .co-textarea {
+    width: 100%;
+    background: rgba(0, 0, 0, 0.3);
+    border: 1px solid #445;
+    border-radius: 4px;
+    color: #fff;
+    padding: 0.8rem;
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: all 0.3s;
+}
+
+.co-input:focus, .co-textarea:focus {
+    outline: none;
+    border-color: #00d2ff;
+    background: rgba(0, 20, 40, 0.6);
+    box-shadow: 0 0 10px rgba(0, 210, 255, 0.1);
+}
+
+.co-textarea { resize: vertical; min-height: 80px; }
+
+.main-input {
+    font-size: 1.2rem;
+    border-bottom: 2px solid #00d2ff;
+    background: rgba(0, 210, 255, 0.05);
+}
+
+.co-hint {
+    font-size: 0.75rem;
+    color: #666;
+    margin-top: 4px;
+    text-align: right;
+}
+
+.co-divider {
+    height: 1px;
+    background: rgba(255, 255, 255, 0.1);
+    margin: 1.5rem 0;
+}
+
+/* 难度选择器 (复用但独立样式) */
+.co-diff-selector {
+    display: flex;
+    align-items: center;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: 4px;
+    padding: 0.5rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.co-arrow-btn {
+    background: transparent;
+    border: none;
+    color: #00d2ff;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 12px;
+}
+.co-arrow-btn:hover { color: #fff; text-shadow: 0 0 5px #00d2ff; }
+.co-arrow-btn.disabled { color: #444; cursor: not-allowed; }
+
+.co-diff-display { flex: 1; text-align: center; }
+.co-diff-name { font-size: 1.1rem; font-weight: bold; letter-spacing: 2px; }
+
+/* 难度颜色 (复用逻辑) */
+.diff-color-1 { color: #2ecc71; }
+.diff-color-2 { color: #f1c40f; }
+.diff-color-3 { color: #e67e22; }
+.diff-color-4 { color: #e74c3c; }
+.diff-color-5 { color: #800080; }
+
+/* --- STATE 2: Loading 容器 --- */
+.co-loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+}
+
+.co-spinner {
+    width: 60px;
+    height: 60px;
+    border: 4px solid rgba(0, 210, 255, 0.1);
+    border-top: 4px solid #00d2ff;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin-bottom: 2rem;
+    box-shadow: 0 0 20px rgba(0, 210, 255, 0.2);
+}
+
+.co-loading-text {
+    font-size: 1.5rem;
+    color: #00d2ff;
+    letter-spacing: 2px;
+    margin-bottom: 0.5rem;
+    animation: pulse 1.5s infinite;
+}
+
+.co-loading-subtext {
+    font-size: 0.9rem;
+    color: #667;
+}
+
+/* --- STATE 3: Preview 容器 --- */
+.co-preview-container {
+    width: 100%;
+    max-width: 800px;
+    animation: slideUp 0.5s ease-out;
+}
+
+.co-result-card {
+    background: rgba(16, 20, 24, 0.95);
+    border: 1px solid #00d2ff;
+    border-radius: 8px;
+    padding: 2rem;
+    box-shadow: 0 0 40px rgba(0, 210, 255, 0.15);
+    position: relative;
+    
+    /* 🟢 [修改] 启用滚动与限制高度 
+       修复：将预留空间从 200px 增加到 280px (Title 100px + Footer 100px + Buffer 80px)
+       防止 flex 居中布局将卡片顶部顶出屏幕 */
+    overflow-y: auto; 
+    overflow-x: hidden;
+    max-height: calc(100vh - 280px); 
+    
+    /* 底部内边距 */
+    padding-bottom: 3rem;
+    
+    /* 🟢 [新增] 增加顶部边距，防止视觉上贴太紧 */
+    margin-top: 10px;
+}
+
+/* 装饰性光效 */
+.co-result-card::before {
+    content: "";
+    position: absolute;
+    top: 0; left: 0; right: 0; height: 4px;
+    background: linear-gradient(90deg, transparent, #00d2ff, transparent);
+}
+
+.co-result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+}
+
+.co-result-title {
+    font-size: 1.8rem;
+    color: #fff;
+    font-weight: bold;
+}
+
+.co-result-tags {
+    font-size: 0.8rem;
+    color: #00d2ff;
+    border: 1px solid rgba(0, 210, 255, 0.3);
+    padding: 4px 8px;
+    border-radius: 4px;
+    background: rgba(0, 210, 255, 0.05);
+}
+
+.co-result-desc {
+    color: #bbb;
+    line-height: 1.6;
+    margin-bottom: 2rem;
+    font-style: italic;
+    border-left: 3px solid #444;
+    padding-left: 1rem;
+}
+
+.co-stats-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+.co-stat-box {
+    background: rgba(255, 255, 255, 0.03);
+    padding: 1rem;
+    text-align: center;
+    border-radius: 4px;
+}
+.co-stat-box .label { font-size: 0.8rem; color: #666; margin-bottom: 4px; }
+.co-stat-box .value { font-size: 1.1rem; color: #eee; font-weight: bold; }
+.co-stat-box .value.highlight { color: #ffd700; }
+
+/* 伴侣预览区 */
+.co-companion-preview {
+    background: linear-gradient(to right, rgba(231, 29, 54, 0.1), transparent);
+    border-left: 4px solid #e71d36;
+    padding: 1rem;
+    border-radius: 0 4px 4px 0;
+}
+
+.co-companion-preview .label {
+    font-size: 0.75rem; color: #e71d36; text-transform: uppercase; margin-bottom: 0.5rem;
+}
+
+.cp-row { display: flex; align-items: baseline; gap: 0.8rem; margin-bottom: 0.5rem; }
+.cp-name { font-size: 1.3rem; color: #fff; font-weight: bold; }
+.cp-identity { font-size: 0.9rem; color: #aaa; background: rgba(0,0,0,0.3); padding: 2px 6px; border-radius: 2px; }
+
+.cp-desc { color: #ccc; font-size: 0.9rem; margin-bottom: 0.8rem; }
+.cp-stats { display: flex; gap: 1.5rem; font-size: 0.85rem; color: #e71d36; }
+
+/* =========================================
+   3. 底部栏与按钮
+   ========================================= */
+.co-error-bar {
+    background: rgba(231, 29, 54, 0.2);
+    border-top: 1px solid #e71d36;
+    color: #ffadb6;
+    text-align: center;
+    padding: 0.5rem;
+    font-size: 0.9rem;
+    animation: shake 0.4s;
+}
+
+.co-action-bar {
+    padding: 1.5rem 3rem;
+    display: flex;
+    justify-content: flex-end;
+    gap: 1.5rem;
+    background: linear-gradient(to top, rgba(0,0,0,0.9), transparent);
+    flex-shrink: 0;
+}
+
+.co-btn-group-left { margin-right: auto; display: flex; gap: 1rem; }
+
+/* 按钮基础 */
+.co-btn {
+    font-family: inherit;
+    font-size: 1rem;
+    padding: 0.8rem 2rem;
+    cursor: pointer;
+    border: none;
+    transition: all 0.3s;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    position: relative;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.co-btn-cancel {
+    background: transparent;
+    color: #666;
+    border: 1px solid #333;
+}
+.co-btn-cancel:hover { color: #aaa; border-color: #555; }
+
+.co-btn-sub {
+    background: rgba(255, 255, 255, 0.05);
+    color: #ddd;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+.co-btn-sub:hover { background: rgba(255, 255, 255, 0.1); }
+
+/* 初始化按钮 (科技蓝) */
+.co-btn-init {
+    background: rgba(0, 210, 255, 0.1);
+    color: #00d2ff;
+    border: 1px solid #00d2ff;
+    font-weight: bold;
+}
+.co-btn-init:hover {
+    background: #00d2ff;
+    color: #000;
+    box-shadow: 0 0 15px #00d2ff;
+}
+
+/* 开始按钮 (确认色) */
+.co-btn-start {
+    background: linear-gradient(45deg, #00d2ff, #2ecc71);
+    color: #000;
+    font-weight: bold;
+    border: none;
+    padding: 0.8rem 3rem;
+}
+.co-btn-start:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 20px rgba(46, 204, 113, 0.4);
+}
+
+.co-btn-glow {
+    position: absolute;
+    top: 0; left: -100%;
+    width: 100%; height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255,255,255,0.4), transparent);
+    animation: shine 3s infinite;
+}
+
+/* =========================================
+   4. 动画 Keyframes
+   ========================================= */
+@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+@keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+@keyframes slideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+@keyframes shine { 0% { left: -100%; } 20% { left: 200%; } 100% { left: 200%; } }
+@keyframes shake { 0%, 100% { transform: translateX(0); } 25% { transform: translateX(-5px); } 75% { transform: translateX(5px); } }
+
+/* =========================================
+   5. 响应式适配 (Mobile)
+   ========================================= */
+@media (max-width: 900px) {
+    .co-edit-container {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .co-column {
+        width: 100%;
+        max-height: none; /* 移除高度限制，依靠父级滚动 */
+    }
+
+    .co-body {
+        align-items: flex-start; /* 顶部对齐防止被切 */
+        padding: 1rem;
+        overflow-y: auto; /* 确保小屏下可以滚动整个内容 */
+    }
+
+    .co-action-bar {
+        padding: 1rem;
+        flex-direction: column-reverse; /* 按钮垂直排列 */
+        gap: 1rem;
+    }
+
+    .co-btn-group-left {
+        width: 100%;
+        justify-content: space-between;
+        margin-right: 0;
+    }
+
+    .co-btn { width: 100%; }
+    
+    .co-header h2 { font-size: 1.5rem; }
+    
+    .co-stats-grid { grid-template-columns: 1fr; }   
+}
+
+/* =========================================
+   6. 新增组件样式 (Point Buy & Edit Grid)
+   ========================================= */
+
+/* --- 命运天平 (Point Buy System) --- */
+.co-balance-container {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 4px;
+    padding: 0.8rem;
+    margin-bottom: 1.5rem;
+    border: 1px solid rgba(255, 215, 0, 0.1);
+}
+
+.co-balance-row {
+    display: flex;
+    align-items: center;
+    margin-bottom: 0.8rem;
+    font-size: 0.9rem;
+}
+
+.co-balance-row:last-child { margin-bottom: 0; }
+
+.co-balance-row .lbl {
+    width: 110px;
+    color: #aaa;
+    font-size: 0.85rem;
+}
+
+.co-balance-row .ctrl-group {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+/* 进度条样式 */
+.progress-bar {
+    flex: 1;
+    height: 6px;
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 3px;
+    overflow: hidden;
+    position: relative;
+}
+
+.progress-bar .fill {
+    height: 100%;
+    transition: width 0.3s ease-out;
+    box-shadow: 0 0 5px currentColor;
+}
+
+.progress-bar .fill.gold { background: #ffd700; color: #ffd700; }
+.progress-bar .fill.blue { background: #00d2ff; color: #00d2ff; }
+.progress-bar .fill.pink { background: #ff69b4; color: #ff69b4; }
+
+/* 迷你按钮 */
+.btn-mini {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid #445;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: monospace;
+    transition: all 0.2s;
+}
+
+.btn-mini:hover:not(:disabled) {
+    background: #fff;
+    color: #000;
+    transform: scale(1.1);
+}
+
+.btn-mini:disabled {
+    opacity: 0.2;
+    cursor: not-allowed;
+    border-color: transparent;
+}
+
+/* --- 预览页：可编辑档案网格 (Player Profile) --- */
+.co-player-edit-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+    margin: 1.5rem 0;
+    background: rgba(0, 0, 0, 0.2);
+    padding: 1rem;
+    border-radius: 4px;
+}
+
+.pe-group {
+    display: flex;
+    flex-direction: column;
+}
+
+.pe-group.full {
+    grid-column: span 2;
+}
+
+.pe-group label {
+    font-size: 0.7rem;
+    color: #00d2ff;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.pe-input {
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #445;
+    color: #fff;
+    padding: 4px 0;
+    font-family: inherit;
+    font-size: 0.95rem;
+    transition: border-color 0.3s, background 0.3s;
+}
+
+.pe-input:hover {
+    border-bottom-color: #667;
+}
+
+.pe-input:focus {
+    border-bottom-color: #00d2ff;
+    background: rgba(0, 210, 255, 0.05);
+    outline: none;
+}
+
+/* --- 预览页：透明文本域 --- */
+.co-textarea-transparent {
+    width: 100%;
+    background: transparent;
+    border: 1px dashed transparent;
+    color: #ccc;
+    font-style: italic;
+    resize: none;
+    font-family: inherit;
+    padding: 8px;
+    line-height: 1.5;
+    transition: all 0.3s;
+    border-radius: 4px;
+}
+
+.co-textarea-transparent:hover {
+    border-color: rgba(255, 255, 255, 0.1);
+}
+
+.co-textarea-transparent:focus {
+    border-color: #00d2ff;
+    background: rgba(0, 0, 0, 0.2);
+    outline: none;
+    font-style: normal;
+}
+
+/* --- 统计盒子交互与 Tooltip --- */
+.co-stat-box.interactive {
+    cursor: help;
+    position: relative;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    transition: border-color 0.3s;
+}
+
+.co-stat-box.interactive:hover {
+    border-color: #00d2ff;
+    background: rgba(0, 210, 255, 0.05);
+}
+
+.co-tooltip-list {
+    position: absolute;
+    bottom: 110%; /* 显示在上方 */
+    left: 50%;
+    transform: translateX(-50%);
+    background: rgba(16, 20, 24, 0.98);
+    border: 1px solid #00d2ff;
+    padding: 8px;
+    border-radius: 4px;
+    width: 220px;
+    max-height: 200px;
+    overflow-y: auto;
+    z-index: 100;
+    pointer-events: none; /* 防止遮挡鼠标导致闪烁 */
+    box-shadow: 0 5px 20px rgba(0, 0, 0, 0.5);
+    animation: slideUp 0.2s ease-out;
+}
+
+/* 滚动条 */
+.co-tooltip-list::-webkit-scrollbar { width: 3px; }
+.co-tooltip-list::-webkit-scrollbar-thumb { background: #00d2ff; }
+
+.tooltip-item {
+    font-size: 0.8rem;
+    color: #ddd;
+    padding: 4px 0;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    display: flex;
+    justify-content: space-between;
+}
+
+.tooltip-item:last-child { border-bottom: none; }
+.tooltip-item .q-GRAY { color: #aaa; }
+.tooltip-item .q-BLUE { color: #00d2ff; }
+.tooltip-item .q-PURPLE { color: #a020f0; }
+.tooltip-item .q-GOLD { color: #ffd700; }
+
+/* =========================================
+   7. 滚动条美化 (Result Card Scrollbar)
+   ========================================= */
+.co-result-card::-webkit-scrollbar {
+    width: 6px; /* 较细的滚动条 */
+}
+
+.co-result-card::-webkit-scrollbar-track {
+    background: rgba(0, 0, 0, 0.3); /* 轨道背景 */
+    border-radius: 3px;
+    margin: 10px 0; /* 上下留白 */
+}
+
+.co-result-card::-webkit-scrollbar-thumb {
+    background: rgba(0, 210, 255, 0.3); /* 滑块颜色 (半透明蓝) */
+    border-radius: 3px;
+    border: 1px solid rgba(0, 210, 255, 0.1);
+}
+
+.co-result-card::-webkit-scrollbar-thumb:hover {
+    background: rgba(0, 210, 255, 0.8); /* 悬停高亮 */
+}

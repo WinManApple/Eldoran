@@ -1,0 +1,219 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* =========================================
+   4. 游戏内 HUD 界面 (In-Game HUD)
+   包含：玩家状态栏布局、日志面板、任务面板、底部交互栏
+   ========================================= */
+
+/* ----------------------------------
+   A. HUD 容器系统 (Layout Containers)
+   ---------------------------------- */
+
+#game-hud {
+    position: absolute;
+    top: 0; left: 0; width: 100%; height: 100%;
+    pointer-events: none; /* 让鼠标事件穿透到下面的 Phaser 画布 */
+    z-index: 10;
+}
+
+/* 恢复 HUD 内部各个区域的鼠标事件 */
+.hud-top-left, .hud-top-right, .hud-side-left, .hud-side-right, .hud-bottom {
+    pointer-events: auto;
+}
+
+/* ----------------------------------
+   B. 左上：顶部组合区域 (Player & Location)
+   ---------------------------------- */
+
+/* 1. 父容器：负责定位和弹性布局 */
+.hud-top-left-group {
+    position: absolute;
+    top: 20px; left: 20px;
+    display: flex; /* 关键：弹性布局让子元素横向排列 */
+    align-items: flex-start; /* 顶部对齐 */
+    gap: 10px; /* 两个面板之间的间距 */
+    pointer-events: none; /* 容器本身不阻挡鼠标 */
+}
+
+/* 2. 玩家状态栏 (原 .hud-top-left，移除绝对定位) */
+.hud-player-status {
+    display: flex;
+    align-items: center;
+    background: rgba(10, 10, 18, 0.8) !important;
+    padding: 10px 20px 10px 10px;
+    border: var(--mana-border) !important;         /* 使用魔力边框 */
+    box-shadow: var(--mana-glow);                  /* 增加发光 */
+    backdrop-filter: blur(5px);                    /* 毛玻璃效果 */
+    border-radius: 12px;
+    border-left: 4px solid #d4af37;
+    backdrop-filter: blur(2px);
+    pointer-events: auto; /* 恢复点击 */
+    flex-shrink: 0; /* 防止被挤压 */
+}
+
+/* 3. 位置与时间面板 (新增) */
+.hud-location-panel {
+    background: rgba(10, 10, 18, 0.8) !important;
+    border: var(--mana-border) !important;
+    box-shadow: var(--mana-glow);
+    backdrop-filter: blur(5px);
+    border-radius: 10px;
+    padding: 5px 15px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-width: 140px; /* 最小宽度 */
+    height: 58px; /* 高度尽量与左边对齐 (左边约64+20=84，或者是内容撑开，这里设个固定高度或 auto) */
+    /* 为了视觉更协调，我们让它高度自适应，或者垂直居中 */
+    align-self: center; 
+    pointer-events: auto;
+    box-shadow: 0 4px 10px rgba(0,0,0,0.5);
+}
+
+.location-text {
+    font-size: 16px;
+    font-weight: bold;
+    color: #fff;
+    white-space: nowrap; /* 只有这一行变长时，背景才会自动变宽 */
+    text-shadow: 1px 1px 2px #000;
+    margin-bottom: 2px;
+}
+
+.time-text {
+    font-size: 14px;
+    font-family: 'Consolas', monospace;
+    color: #ddd;
+    letter-spacing: 1px;
+}
+
+.stats-panel {
+    display: flex; flex-direction: column; gap: 5px;
+}
+
+.stats-header {
+    display: flex; justify-content: space-between; align-items: center; width: 220px;
+}
+
+.player-name {
+    color: #fff; font-weight: bold; font-size: 16px; text-shadow: 1px 1px 2px #000;
+}
+
+.bars-container {
+    width: 220px; /* 稍微加宽以适配布局 */
+}
+
+/* ----------------------------------
+   C. 右上：系统控制区 (System Controls)
+   ---------------------------------- */
+
+.hud-top-right {
+    position: absolute;
+    top: 20px; right: 20px;
+    display: flex; flex-direction: row; align-items: center; gap: 15px;
+}
+/* 注意：齿轮按钮 .gear-btn 和状态灯 .status-lights 的样式在 components.css 中 */
+
+/* ----------------------------------
+   D. 左侧：日志面板 (Game Log)
+   ---------------------------------- */
+
+.hud-side-left {
+    position: absolute;
+    bottom: 100px; left: 20px;
+    width: 300px;
+    max-height: 200px;
+    overflow: hidden; /* 防止日志太长溢出 */
+}
+
+.log-container {
+    display: flex; flex-direction: column; gap: 5px;
+}
+
+.log-item {
+    font-size: 14px;
+    color: rgba(255, 255, 255, 0.9);
+    text-shadow: 1px 1px 2px #000;
+    background: linear-gradient(90deg, rgba(0,0,0,0.6), transparent);
+    padding: 4px 10px;
+    border-color: rgba(102, 204, 255, 0.3) !important;
+    border-left: 3px solid rgba(255, 255, 255, 0.5);
+    animation: fadeIn 0.3s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateX(-10px); }
+    to { opacity: 1; transform: translateX(0); }
+}
+
+/* ----------------------------------
+   E. 右侧：任务面板 (Quest Panel)
+   ---------------------------------- */
+
+.hud-side-right {
+    position: absolute;
+    top: 90px; /* 避开右上角的齿轮 */
+    right: 20px;
+    width: 220px;
+    background: linear-gradient(90deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 20%);
+    padding: 10px;
+    border-radius: 8px;
+    color: #eee;
+    border-right: 3px solid #d4af37;
+    text-align: right; /* 文字右对齐设计 */
+}
+
+.quest-panel h3 { margin: 0 0 5px 0; font-size: 14px; color: #d4af37; opacity: 0.9; border-color: rgba(102, 204, 255, 0.3) !important;}
+.quest-title { font-weight: bold; margin: 0; font-size: 16px; color: #fff; }
+.quest-desc { font-size: 12px; margin: 5px 0 0 0; color: #ccc; }
+
+/* ----------------------------------
+   F. 底部：交互栏 (Bottom Bar)
+   ---------------------------------- */
+
+.hud-bottom {
+    position: absolute;
+    bottom: 30px; 
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex; 
+    gap: 15px; /* 稍微减小间距以容纳更多按钮，或保持 20px 如果屏幕够大 */
+    
+    /* [新增] 视觉容器优化 */
+    background: rgba(10, 10, 18, 0.6); /* 半透明黑底 */
+    padding: 10px 25px;
+    border-radius: 30px; /* 两端圆润 */
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(5px);
+    box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    
+    /* [新增] 换行保护：如果屏幕实在太小，允许两行排列 */
+    flex-wrap: wrap; 
+    justify-content: center;
+    width: max-content; /* 宽度随内容撑开 */
+    max-width: 95%; /* 防止超出屏幕边缘 */
+}
+
+/* 配合修改：稍微缩小按钮文字，防止过长 */
+.hud-btn {
+    /* 假设 hud-btn 样式定义在 common 或 hud.css 其他地方 */
+    /* 如果这里没定义 hud-btn，建议加上这两行以防万一 */
+    white-space: nowrap; 
+    font-size: 14px; 
+}

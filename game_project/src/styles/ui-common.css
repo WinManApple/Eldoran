@@ -1,0 +1,292 @@
+/*
+* Project: Eldoran
+ * Copyright (C) 2026 WinAppleMan
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+*/
+
+/* src/styles/ui-common.css */
+
+/* =========================================
+   通用组件库 (Common Components)
+   包含：按钮、滑块、状态灯、动画、通用容器
+   ========================================= */
+
+/* --- 1. 按钮体系 --- */
+.rpg-btn {
+    background: linear-gradient(90deg, transparent 0%, rgba(0,0,0,0.6) 20%, rgba(0,0,0,0.6) 80%, transparent 100%);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-left: none; border-right: none;
+    color: #fff;
+    padding: 15px 0;
+    font-size: 18px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    position: relative;
+    overflow: hidden;
+    display: flex; justify-content: center; align-items: center;
+}
+
+.rpg-btn:hover:not(.disabled) {
+    background: linear-gradient(90deg, transparent 0%, rgba(100, 80, 255, 0.4) 20%, rgba(100, 80, 255, 0.4) 80%, transparent 100%);
+    border-color: rgba(160, 140, 255, 0.8);
+    transform: scale(1.05);
+    text-shadow: 0 0 10px #fff;
+}
+
+.rpg-btn.disabled {
+    color: #555;
+    background: rgba(0,0,0,0.2);
+    border-color: #333;
+    cursor: not-allowed;
+    pointer-events: none;
+}
+
+.rpg-btn.small {
+    padding: 8px 15px;
+    font-size: 13px;
+    min-width: 80px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+.rpg-btn.small.active {
+    background: linear-gradient(90deg, #673AB7 0%, #512DA8 100%);
+    border-color: #9575CD;
+    box-shadow: 0 0 10px #673AB7;
+}
+
+.rpg-btn.danger {
+    color: #ff9999;
+}
+.rpg-btn.danger:hover {
+    background: linear-gradient(90deg, transparent 0%, rgba(200, 50, 50, 0.4) 20%, rgba(200, 50, 50, 0.4) 80%, transparent 100%);
+    border-color: #e74c3c;
+}
+
+.rpg-btn.primary {
+    border-color: #d4af37;
+    color: #ffd700;
+}
+
+/* 纯文本链接按钮 */
+.text-btn {
+    background: none; border: none; color: #555;
+    cursor: pointer; text-decoration: underline; font-size: 0.9rem;
+}
+.text-btn:hover { color: #ccc; }
+
+/* --- 2. 表单组件 --- */
+.rpg-slider {
+    width: 100%; height: 6px; background: #444;
+    outline: none; -webkit-appearance: none; border-radius: 3px;
+}
+.rpg-slider::-webkit-slider-thumb {
+    -webkit-appearance: none; width: 20px; height: 20px;
+    background: #fff; border-radius: 50%; cursor: pointer;
+    box-shadow: 0 0 10px #fff; transition: transform 0.2s;
+}
+.rpg-slider::-webkit-slider-thumb:hover { transform: scale(1.2); }
+
+.rpg-select {
+    width: 100%; padding: 10px; background: #222; color: white;
+    border: 1px solid #444; font-size: 16px; outline: none;
+}
+
+/* --- 3. 动画 --- */
+@keyframes fadeIn {
+    from { opacity: 0; } to { opacity: 1; }
+}
+@keyframes fadeOut {
+    from { opacity: 1; } to { opacity: 0; }
+}
+
+/* Vue Transition Helpers */
+.fade-enter-active, .fade-leave-active { transition: opacity 0.5s ease; }
+.fade-enter-from, .fade-leave-to { opacity: 0; }
+
+/* ==========================================================================
+   [补丁] 遗漏的视觉组件 (Visual Elements)
+   包含：头像框、血条/蓝条、AI状态灯、齿轮按钮、资源图标
+   ========================================================================== */
+
+/* ----------------------------------
+   1. 头像与框架 (Avatars)
+   ---------------------------------- */
+.avatar-frame {
+    width: 64px; height: 64px;
+    background: #222;
+    border: 2px solid #d4af37;
+    border-radius: 8px;
+    margin-right: 15px;
+    overflow: hidden;
+    display: flex; justify-content: center; align-items: center;
+    box-shadow: 0 0 10px rgba(0,0,0,0.5);
+    flex-shrink: 0;
+}
+.avatar-placeholder { 
+    font-size: 18px; font-weight: bold; color: #fff; 
+    text-align: center; line-height: 1.2; 
+}
+
+/* ----------------------------------
+   2. 状态条体系 (Progress Bars)
+   ---------------------------------- */
+.bar-wrap {
+    position: relative; width: 100%; height: 16px;
+    background: #111; margin-bottom: 4px;
+    border-radius: 2px; border: 1px solid #444; overflow: hidden;
+}
+.bar-fill { height: 100%; transition: width 0.5s ease-out; }
+
+/* 经典的 RPG 红蓝配色 */
+.hp-bar { background: linear-gradient(90deg, #8b0000, #ff4d4d); }
+.mp-bar { background: linear-gradient(90deg, #00008b, #4d4dff); }
+
+.bar-text {
+    position: absolute; top: -1px; left: 5px;
+    font-size: 10px; color: #eee; text-shadow: 1px 1px 1px #000; 
+    line-height: 16px; z-index: 2;
+}
+
+/* ----------------------------------
+   3. 状态指示灯 (Status Lights - 用于 AI/网络)
+   ---------------------------------- */
+.status-lights {
+    display: flex; align-items: center; gap: 6px;
+    background: rgba(0, 0, 0, 0.6); padding: 6px 12px;
+    border-radius: 20px; border: 1px solid rgba(255, 255, 255, 0.1); 
+    height: 30px;
+}
+.status-light {
+    width: 10px; height: 10px; border-radius: 50%; 
+    background: #333; border: 1px solid #555; transition: all 0.3s;
+}
+.light-label { font-size: 10px; color: #aaa; margin-left: 5px; }
+
+/* 动画效果 */
+.status-light.connection.active {
+    background: #00ff00; box-shadow: 0 0 5px #00ff00; 
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% { opacity: 0.6; }
+    50% { opacity: 1; box-shadow: 0 0 10px #00ff00; }
+    100% { opacity: 0.6; }
+}
+@keyframes pulse-thinking {
+    0% { transform: scale(1); opacity: 0.8; }
+    50% { transform: scale(1.2); opacity: 1; box-shadow: 0 0 15px #aa00ff; }
+    100% { transform: scale(1); opacity: 0.8; }
+}
+
+/* ----------------------------------
+   4. 齿轮按钮 (Gear Button)
+   ---------------------------------- */
+.gear-btn {
+    width: 44px; height: 44px;
+    position: relative; cursor: pointer;
+    background: rgba(0,0,0,0.6);
+    border-radius: 50%; border: 1px solid #d4af37;
+    transition: transform 0.5s ease;
+    display: flex; justify-content: center; align-items: center;
+    box-shadow: 0 0 5px rgba(212, 175, 55, 0.3);
+}
+.gear-btn:hover {
+    transform: rotate(90deg) scale(1.1);
+    box-shadow: 0 0 15px rgba(212, 175, 55, 0.8);
+    background: rgba(50, 50, 0, 0.8);
+}
+.gear-core {
+    width: 14px; height: 14px; background: #d4af37;
+    border-radius: 50%; position: relative; z-index: 2;
+}
+.gear-core::after {
+    content: ''; position: absolute; top: 50%; left: 50%; 
+    transform: translate(-50%, -50%);
+    width: 6px; height: 6px; background: #222; border-radius: 50%;
+}
+.gear-teeth {
+    position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%);
+    width: 28px; height: 28px;
+    border: 4px dashed #d4af37; border-radius: 50%; box-sizing: border-box;
+    animation: gear-spin-slow 10s linear infinite;
+}
+@keyframes gear-spin-slow {
+    from { transform: translate(-50%, -50%) rotate(0deg); }
+    to { transform: translate(-50%, -50%) rotate(360deg); }
+}
+
+/* ----------------------------------
+   5. 迷你资源徽章 (Mini Resource)
+   ---------------------------------- */
+.mini-resource {
+    color: #ffd700; font-size: 14px; font-weight: bold;
+    display: flex; align-items: center; gap: 4px;
+    background: rgba(0,0,0,0.5); padding: 2px 8px; border-radius: 10px;
+    border: 1px solid rgba(255, 215, 0, 0.3);
+}
+
+/* ==========================================================================
+   [补丁 2] HUD 交互按钮 (Interactive Buttons)
+   包含：底部功能栏按钮、强交互推进按钮
+   ========================================================================== */
+
+/* 1. HUD 通用功能按钮 (透明黑底 + 白边) */
+.hud-btn {
+    background: rgba(0, 0, 0, 0.7);
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    color: white;
+    padding: 10px 20px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    transition: all 0.2s;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    backdrop-filter: blur(2px);
+}
+
+.hud-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+    transform: translateY(-3px);
+    border-color: #fff;
+}
+
+.hud-btn:active {
+    transform: translateY(0);
+}
+
+/* 2. 强交互按钮 (紫色高亮 - 用于"推进互动") */
+.interact-btn {
+    background: linear-gradient(135deg, #4b0082, #800080);
+    border-color: #d8bfd8;
+    padding: 12px 30px;
+    font-weight: bold;
+    box-shadow: 0 0 10px rgba(128, 0, 128, 0.4);
+}
+
+.interact-btn:hover {
+    background: linear-gradient(135deg, #5e00a3, #990099);
+    box-shadow: 0 0 20px rgba(128, 0, 128, 0.6);
+}
+
+.interact-btn.disabled {
+    filter: grayscale(100%);
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+}
