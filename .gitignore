@@ -18,3 +18,4 @@ npm-debug.log*
 
 # 这里的逻辑是：
 # .css, .html, .js, .py, .obj (若是模型) 都会被自动包含，因为它们不在这个名单里。
+# End of ignore list
