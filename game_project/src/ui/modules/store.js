@@ -50,6 +50,11 @@ export const DIFFICULTY_PRESETS = [
     { label: "地狱", desc: "甚至无法呼吸...", params: { playerDamageMultiplier: 0.5, enemyDamageMultiplier: 2.5, enemyHpMultiplier: 5.0, xpGainMultiplier: 2.0 } }
 ];
 
+function getRandomInt(min, max) {
+    min = Math.ceil(min);
+    max = Math.floor(max);
+    return Math.floor(Math.random() * (max - min + 1)) + min;
+}
 
 /**
  * 🟢 新增：初始化时间随机范围配置 (最小值, 最大值)
