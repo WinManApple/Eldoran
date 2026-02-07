@@ -126,4 +126,11 @@ The chat history is divided into a main timeline and multiple side branches, wit
 
 Copyright (C) 2026 WinAppleMan. 
 
-This project is licensed under the **GNU General Public License v3.0**. You are free to copy, modify, and distribute the code as long as the new project is also Open Source under GPLv3.
+本项目采用 **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh-hans)** (署名-非商业性使用 4.0 国际) 许可协议授权。
+
+本协议核心条款如下：
+1. **署名 (Attribution)**：您可以自由地复制、分发和修改本项目，但必须给出适当的署名，并提供指向本许可协议的链接。
+2. **非商业性使用 (Non-Commercial)**：您不得将本项目或任何基于本项目开发的衍生作品用于商业目的。
+3. **允许修改**：您可以对其进行二次开发、转换或在此基础上进行构建。
+
+This project is licensed under the **CC BY-NC 4.0**. You are free to copy and modify the code for non-commercial purposes, provided that you give appropriate credit to the original author.
