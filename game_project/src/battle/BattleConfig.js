@@ -41,7 +41,7 @@ export const BattleConfig = {
 
     // 3. 战斗机制参数 (核心公式参数)
     Mechanics: {
-        baseFleeChance: 1.0,            // 基础逃跑成功率
+        baseFleeChance: 0.3,            // 基础逃跑成功率
         elementalAdvantage: 1.5,        // 属性克制倍率 (例如: 火打木)
         elementalDisadvantage: 1.0,     // 属性被克制倍率 (例如: 火打水)
         defenseBalanceFactor: 100,      // 防御公式常数 K: 减伤 = Def / (Def + K)

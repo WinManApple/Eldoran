@@ -43,11 +43,11 @@ export const RESOLUTIONS = [
 
 export const DIFFICULTY_PRESETS = [
     null, // 0号位留空，方便索引对齐 (1-5)
-    { label: "简单", desc: "割草模式，享受剧情", params: { playerDamageMultiplier: 1.5, enemyDamageMultiplier: 0.5, enemyHpMultiplier: 0.8, xpGainMultiplier: 1.5 } },
-    { label: "普通", desc: "标准的冒险体验", params: { playerDamageMultiplier: 1.2, enemyDamageMultiplier: 0.8, enemyHpMultiplier: 1.0, xpGainMultiplier: 1.0 } },
-    { label: "困难", desc: "敌人更具威胁", params: { playerDamageMultiplier: 1.0, enemyDamageMultiplier: 1.0, enemyHpMultiplier: 1.5, xpGainMultiplier: 1.2 } },
-    { label: "痛苦", desc: "容错率极低", params: { playerDamageMultiplier: 0.8, enemyDamageMultiplier: 1.2, enemyHpMultiplier: 2.5, xpGainMultiplier: 1.5 } },
-    { label: "地狱", desc: "甚至无法呼吸...", params: { playerDamageMultiplier: 0.5, enemyDamageMultiplier: 2.5, enemyHpMultiplier: 5.0, xpGainMultiplier: 2.0 } }
+    { label: "简单", desc: "割草模式，享受剧情", params: { playerDamageMultiplier: 1.5, enemyDamageMultiplier: 0.25, enemyHpMultiplier: 0.8, xpGainMultiplier: 1.5 } },
+    { label: "普通", desc: "标准的冒险体验", params: { playerDamageMultiplier: 1.2, enemyDamageMultiplier: 0.5, enemyHpMultiplier: 1.0, xpGainMultiplier: 1.0 } },
+    { label: "困难", desc: "敌人更具威胁", params: { playerDamageMultiplier: 1.0, enemyDamageMultiplier: 0.8, enemyHpMultiplier: 1.5, xpGainMultiplier: 1.2 } },
+    { label: "痛苦", desc: "容错率极低", params: { playerDamageMultiplier: 0.8, enemyDamageMultiplier: 1.0, enemyHpMultiplier: 2.5, xpGainMultiplier: 1.5 } },
+    { label: "地狱", desc: "甚至无法呼吸...", params: { playerDamageMultiplier: 0.5, enemyDamageMultiplier: 1.5, enemyHpMultiplier: 5.0, xpGainMultiplier: 2.0 } }
 ];
 
 function getRandomInt(min, max) {

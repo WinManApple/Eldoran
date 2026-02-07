@@ -157,7 +157,8 @@ export default {
     setup(props, { emit }) {
         const inputText = ref("");
         const msgContainer = ref(null);
-
+        // [新增] 滚动控制锁：默认为 true (允许自动滚动)
+        const shouldAutoScroll = ref(true);
         const { handleUserChat } = useChat();
         
         // [新增] 从 Store 获取剧情锁状态
@@ -191,6 +192,9 @@ export default {
         // [新增] 方法：加载历史并修正滚动条
         const loadHistory = async () => {
             if (!msgContainer.value) return;
+
+            // [新增] 加载历史属于这一类"不要自动滚到底部"的操作
+            shouldAutoScroll.value = false;
 
             // 1. 记录当前的滚动位置和内容高度 (Scroll Restoration 关键步骤)
             const oldScrollHeight = msgContainer.value.scrollHeight;
@@ -229,8 +233,22 @@ export default {
             }
         };
 
-        // 监听当前可见消息变化，自动滚动
-        watch(currentMessages, () => scrollToBottom(), { deep: true });
+        // [修改] 智能滚动监听
+        watch(currentMessages, async () => {
+            // 等待 DOM 更新 (新气泡渲染出来)
+            await nextTick();
+
+            // 只有当允许自动滚动时，才执行滚动
+            if (shouldAutoScroll.value) {
+                if (msgContainer.value) {
+                    msgContainer.value.scrollTop = msgContainer.value.scrollHeight;
+                }
+            }
+
+            // 🟢 每次触发后，重置为 true。
+            // 这样保证了下一次 AI 发消息或者玩家发消息时，依然会自动滚动。
+            shouldAutoScroll.value = true; 
+        }, { deep: true });
         
         onMounted(() => {
             // 🛑 打开对话框时，禁用 Phaser 游戏层的输入，防止点穿到地图
@@ -249,12 +267,17 @@ export default {
 
         // 剧情推进逻辑 (点击空白处)
         const advanceDialogue = () => {
-            // 只有当有隐藏消息，或者处于脚本等待状态时，点击才有效
             if (hasHiddenMessages.value || isWaiting.value) {
+                // [新增] 这是一个"手动"推进操作，我们不希望它强制滚到底部
+                shouldAutoScroll.value = false;
+
                 const didAdvance = ChatData.nextBubble();
-                if (didAdvance) {
-                    scrollToBottom();
-                }
+                
+                // [删除] 既然已经通过 ChatData 更新触发了 watch，
+                // 这里不需要再显式调用 scrollToBottom()，而且我们的目的是"不滚动"
+                // if (didAdvance) {
+                //    scrollToBottom(); 
+                // }
             }
         };
 

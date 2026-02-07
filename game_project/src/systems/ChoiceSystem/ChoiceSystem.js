@@ -25,11 +25,9 @@ import { Chat_Memory } from '../../LLM/memory/Chat_Memory.js';
 // 模块级变量，用于暂存当前正在进行的剧本数据 (不需要由 Vue 响应式追踪)
 let currentScript = null;
 let currentStageId = null;
+let _globalLastClickTime = 0; // 全局防抖计时器
 
 export class ChoiceSystem {
-
-    // 静态变量：用于记录上一次点击的时间戳
-    static _lastClickTime = 0;
 
     /**
      * 启动抉择 (入口)
@@ -141,11 +139,11 @@ export class ChoiceSystem {
         // 如果距离上一次点击小于 500毫秒，直接忽略
         // 这能 100% 拦截鼠标连点、微动开关弹跳、事件冒泡导致的重复调用
         const now = Date.now();
-        if (now - this._lastClickTime < 500) {
-            console.warn(`[ChoiceSystem] 拦截到快速连点 (间隔: ${now - this._lastClickTime}ms)`);
+        if (now - _globalLastClickTime < 500) {
+            console.warn(`[ChoiceSystem] 拦截到快速连点 (间隔: ${now - _globalLastClickTime}ms)`);
             return false;
         }
-        this._lastClickTime = now;
+        _globalLastClickTime = now;
 
         // 🟢 [修复 2] 状态锁 (保持原有的逻辑作为第二道防线)
         if (store.choice.isProcessing) {
@@ -153,13 +151,15 @@ export class ChoiceSystem {
             return false;
         }
         
+        store.choice.isProcessing = true; 
+
         const stageData = currentScript[currentStageId];
         if (!stageData || !stageData.choices) return false;
 
         const selectedOption = stageData.choices[choiceIndex];
         if (!selectedOption) return false;
 
-        store.choice.isProcessing = true; 
+        
         
         //  日志构建与写入 (Action 之前) ==========================
         try {

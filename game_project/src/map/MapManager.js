@@ -42,6 +42,28 @@ export class MapManager {
     }
 
     // ==========================================
+    // 🟢 新增：UI 同步辅助方法
+    // ==========================================
+    /**
+     * 强制将当前地图状态同步到 Vue 全局 Store
+     * 修复 UI 显示 "正在定位..." 的问题
+     */
+    _syncStateToUI() {
+        if (!window.uiStore || !window.uiStore.worldState) return;
+        
+        const current = this.currentMap;
+        if (current) {
+            // 同步地图名称，如果没有名字则显示默认值
+            window.uiStore.worldState.mapName = current.name || "未知区域";
+            
+            // 如果你需要同步环境类型，也可以在这里加
+            // window.uiStore.worldState.environment = current.environment || "default";
+            
+            console.log(`[MapManager] UI 同步完成: ${window.uiStore.worldState.mapName}`);
+        }
+    }
+
+    // ==========================================
     // 1. 状态访问代理 (State Proxy)
     // ==========================================
 
@@ -68,6 +90,7 @@ export class MapManager {
 
     initNewGame(openingConfig) {
         this.registry.initNewGame(openingConfig);
+        this._syncStateToUI(); // 🟢 修复：开局后同步 UI
     }
 
     registerMap(mapData) {
@@ -75,7 +98,9 @@ export class MapManager {
     }
 
     switchMap(targetMapId) {
-        return this.registry.switchMap(targetMapId);
+        const result = this.registry.switchMap(targetMapId);
+        this._syncStateToUI(); // 🟢 修复：切换地图后同步 UI
+        return result;
     }
     
     // 辅助：获取任意地图
@@ -99,18 +124,14 @@ export class MapManager {
         this.navigation.triggerLazyGeneration(startLayer, count);
     }
 
-    /**
-     * 补全缺失的接口代理
-     * 获取当前节点所在的层级 (用于 HUD 显示)
-     */
     getCurrentNodeLayer() {
         return this.navigation.getCurrentNodeLayer();
     }
     
-    /**
-     * 传送至指定地图的根节点
-     */
     teleportToMap(targetMapId) {
+        // teleportToMap 内部通常会调用 switchMap，但为了保险起见，这里不需要重复调用 _syncStateToUI，
+        // 除非 navigation 内部绕过了 switchMap 直接修改 currentMap。
+        // 假设 navigation.teleportToMap 最终调用了 registry.switchMap 或 this.switchMap。
         return this.navigation.teleportToMap(targetMapId);
     }
 
@@ -160,5 +181,6 @@ export class MapManager {
 
     deserialize(data) {
         this.serializer.deserialize(data);
+        this._syncStateToUI(); // 🟢 修复：读档后同步 UI
     }
 }
