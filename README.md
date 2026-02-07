@@ -82,7 +82,7 @@ The chat history is divided into a main timeline and multiple side branches, wit
 4.  **Import & Play / 导入并开始**
     打开 SillyTavern，导入人物卡 `card/埃尔多兰.png`。
     选择合适的破限预设（建议不要带格式限制，仅破防即可），即可开始游玩。（注意：SillyTavern 需要安装“酒馆助手”插件）。
-    Open SillyTavern and import the card `card/埃尔多兰.png`. Choose an appropriate Jailbreak (preferably without format restrictions), and start playing. (Note: SillyTavern requires the "Tavern Assistant" plugin).
+    Open SillyTavern and import the card `card/埃尔多兰.png`. Choose an appropriate Jailbreak (preferably without format restrictions), and start playing. (Note: SillyTavern requires the "Tavern-Helper" plugin).
 
 ---
 
