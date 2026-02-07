@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 # * Project: Eldoran
-# Copyright (C) 2026 WinAppleMan
+# Copyright (C) 2026 WinManApple
 # *
 # This program is free software: you can redistribute it and/or modify
 # it under the terms of the GNU General Public License as published by
@@ -20,7 +20,7 @@ import re
 
 # --- 配置区域 ---
 PROJECT_NAME = "Eldoran"
-AUTHOR = "WinAppleMan"
+AUTHOR = "WinManApple"
 YEAR = "2026"
 
 # 核心协议文本 (标准源)
