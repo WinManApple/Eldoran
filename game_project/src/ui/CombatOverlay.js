@@ -107,10 +107,6 @@ export default {
                     </div>
                 </div>
                 
-                <div class="action-section">
-                    <div class="section-title">道具库存</div>
-                    <div class="item-inventory" id="inventory-list-container"></div>
-                </div>
             </div>
         </div>
         
