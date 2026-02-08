@@ -127,17 +127,32 @@ The chat history is divided into a main timeline and multiple side branches, wit
 > 用户需自行承担使用本项目的所有风险。在任何情况下，开发者均不对因使用或无法使用本项目而导致的任何直接、间接、偶然或后果性的损害（包括但不限于数据丢失、精神损害或法律纠纷）承担法律责任。
 > Users assume all risks associated with the use of this project. In no event shall the developer be held liable for any direct, indirect, incidental, or consequential damages (including but not limited to data loss, distress, or legal disputes) arising from the use or inability to use this project.
 
-## 📜 声明 / License
+## 📜 许可协议 / License
 
-**License & Copyright**
+**Copyright (C) 2026 WinAppleMan. All Rights Reserved.**
 
-Copyright (C) 2026 WinAppleMan. 
+本项目采用 **[GNU Affero General Public License v3.0 (AGPL-3.0)](https://www.gnu.org/licenses/agpl-3.0.html)** 协议授权。
 
-本项目采用 **[CC BY-NC 4.0](https://creativecommons.org/licenses/by-nc/4.0/deed.zh-hans)** (署名-非商业性使用 4.0 国际) 许可协议授权。
+### 为什么选择 AGPL-3.0？
+考虑到本项目包含大量的逻辑交互与后端潜力，AGPL-3.0 能够确保：
+1. **开源互惠**：如果您修改了代码并将其部署到服务器上通过网络提供服务，您**必须**向用户公开您的源代码。
+2. **禁止闭源二次开发**：任何基于本项目二次开发的作品，都必须同样采用 AGPL-3.0 协议开源，不得将其闭源商用。
+3. **保留出处**：所有衍生版本必须保留原作者 **WinAppleMan** 的版权声明。
 
-本协议核心条款如下：
-1. **署名 (Attribution)**：您可以自由地复制、分发和修改本项目，但必须给出适当的署名，并提供指向本许可协议的链接。
-2. **非商业性使用 (Non-Commercial)**：您不得将本项目或任何基于本项目开发的衍生作品用于商业目的。
-3. **允许修改**：您可以对其进行二次开发、转换或在此基础上进行构建。
+---
 
-This project is licensed under the **CC BY-NC 4.0**. You are free to copy and modify the code for non-commercial purposes, provided that you give appropriate credit to the original author.
+### ⚠️ 关于商业使用的说明
+虽然 AGPL-3.0 允许在遵守开源义务的前提下使用，但如果您有以下需求：
+* 无法履行开源义务（即希望闭源使用本项目代码）。
+* 需要将本项目集成到受保护的商业产品中。
+* 寻求特殊的商业合作授权。
+
+请务必联系作者进行**商业授权谈判**。未经授权的闭源商业化行为将被视为侵权。
+
+---
+
+**License Summary (English)**
+This project is licensed under **AGPL-3.0**. You are free to copy, modify, and distribute the code, provided that:
+- You prominently display the original copyright notice.
+- Any modifications used over a network (SaaS) must be made available to the public under the same license.
+- Commercial entities wishing to use this code in closed-source products must obtain a separate **Commercial License** from the author.
