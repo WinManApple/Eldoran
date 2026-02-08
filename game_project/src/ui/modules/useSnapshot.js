@@ -65,6 +65,16 @@ export const useSnapshot = () => {
         try {
             if (!store) return;
 
+            // 🚫 [新增] 检查战斗或抉择状态，禁止快照
+            if (store.combat?.isActive) {
+                addLog("⚠️ 战斗期间无法进行快照捕获");
+                return;
+            }
+            if (store.choice?.isActive) {
+                addLog("⚠️ 抉择期间无法进行快照捕获");
+                return;
+            }
+            
             // 🟢 [新增] 抓取相机数据
             let cameraData = null;
             const cam = getPhaserCamera();

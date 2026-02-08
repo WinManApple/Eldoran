@@ -161,7 +161,7 @@ export default `
         ></combat-overlay>
     </transition>
 
-    <global-log v-if="!store.combat.isActive"></global-log>
+    <global-log></global-log>
 
     <choice-overlay></choice-overlay>
 

@@ -14,7 +14,7 @@
     position: fixed;
     bottom: 20px;
     left: 20px;
-    z-index: 9999;
+    z-index: 10001;
     pointer-events: none;
     display: flex;
     /* 🟢 修正：改为 column (标准流)，配合 HTML 顺序 [日志 -> 按钮] */
