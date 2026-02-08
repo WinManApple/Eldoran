@@ -67,23 +67,30 @@ The chat history is divided into a main timeline and multiple side branches, wit
     ```bash
     git clone [https://github.com/WinManApple/Eldoran.git](https://github.com/WinManApple/Eldoran.git)
     ```
-
+    ![alt text](images/1.png)
+    ![alt text](images/2.png)
 2.  **Install Plugin / 安装插件**
     将 `rpg_save_system` 整个文件夹放到 SillyTavern 根目录的 `plugins/` 目录下。
     Move the entire `rpg_save_system` folder to the `plugins/` directory of your SillyTavern root.
-
+    ![alt text](images/3.png)
+    ![alt text](images/4.png)
+    ![alt text](images/5.png)
 3.  **Configure SillyTavern / 配置酒馆**
     打开 SillyTavern 根目录的 `config.yaml` 文件，应用以下设置：
     Open `config.yaml` in the SillyTavern root and apply the following settings:
     * `enableServerPlugins: true` (允许使用后端插件 / Allow server plugins)
     * `enableServerPluginsAutoUpdate: true` (允许后端插件更新 / Allow plugin auto-updates)
     * `disableCsrfProtection: true` (关闭跨站请求伪造保护 / Disable CSRF protection)
-
+    ![alt text](images/7.png)
+    ![alt text](images/8.png)
+    ![alt text](images/9.png)
 4.  **Import & Play / 导入并开始**
     打开 SillyTavern，导入人物卡 `card/埃尔多兰.png`。
     选择合适的破限预设（建议不要带格式限制，仅破防即可），即可开始游玩。（注意：SillyTavern 需要安装“酒馆助手”插件）。
     Open SillyTavern and import the card `card/埃尔多兰.png`. Choose an appropriate Jailbreak (preferably without format restrictions), and start playing. (Note: SillyTavern requires the "Tavern-Helper" plugin).
-
+    ![alt text](images/10.png)
+    ![alt text](images/11.png)
+    ![alt text](images/12.png)
 ---
 
 ## 🛑 特别注意与安全警告 / Security Warning
