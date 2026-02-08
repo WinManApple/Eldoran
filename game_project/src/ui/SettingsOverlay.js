@@ -67,9 +67,9 @@ export default {
                             <div v-for="(param, pKey) in module.data.params" :key="pKey" class="dev-param-row">
                                 <span>{{ param.label }}</span>
                                 <input type="number" 
-                                       v-model.number="store.config.battle.Difficulty[param.key]" 
-                                       :step="param.step" 
-                                       class="dev-input">
+                                    v-model.number="store.config.battle[param.category][param.key]" 
+                                    :step="param.step" 
+                                    class="dev-input">
                             </div>
                         </div>
                     </div>
@@ -159,15 +159,29 @@ export default {
                 id: 'dev_mode',
                 type: 'dev-panel',
                 title: '启用开发者上帝模式 (Developer Mode)',
-                hasSeparator: true, // 上方加个分隔线
+                hasSeparator: true,
                 data: {
-                    isEnabled: false, // 本地状态
+                    isEnabled: false,
                     // 定义需要暴露给开发者修改的参数映射
                     params: [
-                        { label: '玩家伤害倍率 (Player Dmg)', key: 'playerDamageMultiplier', step: 0.1 },
-                        { label: '敌人伤害倍率 (Enemy Dmg)', key: 'enemyDamageMultiplier', step: 0.01 },
-                        { label: '敌人血量倍率 (Enemy HP)', key: 'enemyHpMultiplier', step: 0.1 },
-                        { label: '经验获取倍率 (XP Gain)', key: 'xpGainMultiplier', step: 0.1 }
+                        // ===原有参数 (需要补充 category: 'Difficulty')===
+                        { label: '玩家伤害倍率 (Player Dmg)', key: 'playerDamageMultiplier', category: 'Difficulty', step: 0.1 },
+                        { label: '敌人伤害倍率 (Enemy Dmg)', key: 'enemyDamageMultiplier', category: 'Difficulty', step: 0.01 },
+                        { label: '敌人血量倍率 (Enemy HP)', key: 'enemyHpMultiplier', category: 'Difficulty', step: 0.1 },
+                        { label: '经验获取倍率 (XP Gain)', key: 'xpGainMultiplier', category: 'Difficulty', step: 0.1 },
+
+                        // ===新增参数 (根据 BattleConfig.js 的结构分类)===
+                        // 1. 逃跑率 (位于 Mechanics)
+                        { label: '基础逃跑率 (0.0-1.0)', key: 'baseFleeChance', category: 'Mechanics', step: 0.1 },
+                        
+                        // 2. 属性克制 (位于 Mechanics)
+                        { label: '属性克制倍率 (Element Adv)', key: 'elementalAdvantage', category: 'Mechanics', step: 0.1 },
+                        
+                        // 3. 暴击率 (位于 RNG)
+                        { label: '基础暴击率 (Base Crit)', key: 'baseCritRate', category: 'RNG', step: 0.05 },
+                        
+                        // 4. 暴击伤害 (位于 RNG)
+                        { label: '暴击伤害倍率 (Crit Dmg)', key: 'critDamageMultiplier', category: 'RNG', step: 0.1 }
                     ]
                 }
             }

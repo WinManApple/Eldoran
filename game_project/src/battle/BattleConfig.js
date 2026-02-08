@@ -24,7 +24,7 @@ export const BattleConfig = {
 
     // 2. 基础属性与随机性 (RNG)
     RNG: {
-        baseCritRate: 0.25,             // 基础暴击率
+        baseCritRate: 0.15,             // 基础暴击率
         critDamageMultiplier: 1.5,      // 暴击伤害倍率 (1.5倍)
         baseDodgeRate: 0.1,             // 基础闪避率
         damageVariance: 0.1,            // 伤害浮动范围 (±10%)
@@ -32,7 +32,7 @@ export const BattleConfig = {
 
     // 3. 战斗机制参数 (核心公式参数)
     Mechanics: {
-        baseFleeChance: 0.3,            // 基础逃跑成功率
+        baseFleeChance: 0.2,            // 基础逃跑成功率
         elementalAdvantage: 1.5,        // 属性克制倍率 (例如: 火打木)
         elementalDisadvantage: 1.0,     // 属性被克制倍率 (例如: 火打水)
         defenseBalanceFactor: 100,      // 防御公式常数 K: 减伤 = Def / (Def + K)
