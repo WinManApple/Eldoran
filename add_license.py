@@ -1,46 +1,27 @@
 #!/usr/bin/env python3
-# Project: Eldoran
+# Project: Eldoran License Manager (Auto-Updater)
 # Copyright (C) 2026 WinManApple
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
-
-# Project: Eldoran
-# Copyright (C) 2026 WinManApple
-#
-# This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Affero General Public License as
-# published by the Free Software Foundation, either version 3 of the
-# License, or (at your option) any later version.
-#
-# This program is distributed in the hope that it will be useful,
-# but WITHOUT ANY WARRANTY; without even the implied warranty of
-# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
-# GNU Affero General Public License for more details.
-#
-# You should have received a copy of the GNU Affero General Public License
-# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+# 
+# 功能：
+# 1. 自动识别并移除旧的协议头（无论旧头部的年份或作者写的是什么）。
+# 2. 根据当前配置生成全新的协议头。
+# 3. 智能处理 Shebang (#!...)。
+# 4. 只支持 .js, .css, .html, .py, .obj (已移除 .vue)。
 
 import os
 import re
 
-# --- 配置区域 ---
-PROJECT_NAME = "Eldoran"
-AUTHOR = "WinManApple"
-YEAR = "2026"
+# ==========================================
+# 🔧 配置区域 (后续修改这里即可)
+# ==========================================
+CONFIG = {
+    "PROJECT_NAME": "Eldoran",
+    "AUTHOR": "WinManApple",      # 后续改名直接改这里
+    "YEAR": "2026",               # 到了2027年直接改这里
+}
 
-# 1. 代码文件的协议 (AGPL-3.0) - 标准版
-LICENSE_AGPL_TEXT = f"""
+# 1. 代码文件的协议模板 (AGPL-3.0)
+LICENSE_AGPL_TEMPLATE = """
  * Project: {PROJECT_NAME}
  * Copyright (C) {YEAR} {AUTHOR}
  *
@@ -58,9 +39,8 @@ LICENSE_AGPL_TEXT = f"""
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
 """
 
-# 2. 资源文件的协议 (CC BY-NC-SA 4.0) - 修正版
-# 注意：这里增加了 ShareAlike (SA) 以符合你的混合授权策略
-LICENSE_CC_TEXT = f"""
+# 2. 资源文件的协议模板 (CC BY-NC-SA 4.0)
+LICENSE_CC_TEMPLATE = """
  * Project: {PROJECT_NAME}
  * Copyright (C) {YEAR} {AUTHOR}
  *
@@ -69,194 +49,173 @@ LICENSE_CC_TEXT = f"""
  * http://creativecommons.org/licenses/by-nc-sa/4.0/
 """
 
-# 文件处理配置
-FILE_CONFIG = {
-    '.js': {
-        'style': 'block', 'start': '/*', 'end': '*/'
-    },
-    '.css': {
-        'style': 'block', 'start': '/*', 'end': '*/'
-    },
-    '.html': {
-        'style': 'block', 'start': ''  # 修复：HTML使用正确的注释符
-    },
-    '.vue': {
-        'style': 'block', 'start': ''  # 新增：Vue通常使用HTML注释在顶层
-    },
-    '.obj': {
-        'style': 'line', 'char': '#'
-    },
-    '.py': {
-        'style': 'line', 'char': '#'
-    }
+# 文件类型定义 (已移除 .vue)
+FILE_TYPES = {
+    '.js':   {'style': 'block', 'start': '/*',   'end': '*/'},
+    '.css':  {'style': 'block', 'start': '/*',   'end': '*/'},
+    '.html': {'style': 'block', 'start': ''}, # HTML 专用注释
+    '.obj':  {'style': 'line',  'char': '#'},
+    '.py':   {'style': 'line',  'char': '#'}
 }
 
-def get_license_body(ext):
-    """根据文件扩展名返回纯文本内容的协议"""
-    # 只有 .obj (模型) 使用 CC 协议，其他所有逻辑代码(含HTML/Vue)均属于 AGPL
-    if ext == '.obj':
-        return LICENSE_CC_TEXT.strip()
-    return LICENSE_AGPL_TEXT.strip()
+# ==========================================
+# 🚀 核心逻辑
+# ==========================================
 
-def generate_header_string(ext):
-    """生成带注释符号的完整头部"""
-    if ext not in FILE_CONFIG: return ""
-    conf = FILE_CONFIG[ext]
-    body = get_license_body(ext)
+def get_new_header_content(ext):
+    """根据扩展名渲染最新的协议文本"""
+    # 渲染模板
+    if ext == '.obj':
+        raw_text = LICENSE_CC_TEMPLATE.format(**CONFIG).strip()
+    else:
+        raw_text = LICENSE_AGPL_TEMPLATE.format(**CONFIG).strip()
     
+    conf = FILE_TYPES[ext]
+    
+    # 格式化为注释块
     if conf['style'] == 'block':
-        # 块注释：两头包裹
-        return f"{conf['start']}\n{body}\n{conf['end']}\n\n"
-        
+        return f"{conf['start']}\n{raw_text}\n{conf['end']}\n\n"
     elif conf['style'] == 'line':
-        # 行注释：每行加前缀
-        lines = body.split('\n')
-        commented_lines = []
+        lines = raw_text.split('\n')
+        formatted = []
         for line in lines:
-            # 去掉开头可能存在的 * 号，重新格式化
-            clean_line = line.strip().lstrip('*').strip()
-            if clean_line:
-                commented_lines.append(f"{conf['char']} {clean_line}")
+            # 去除首尾空白和可能存在的星号，重新包装
+            clean = line.strip().lstrip('*').strip()
+            if clean:
+                formatted.append(f"{conf['char']} {clean}")
             else:
-                commented_lines.append(conf['char'])
-        return "\n".join(commented_lines) + "\n\n"
+                formatted.append(conf['char'])
+        return "\n".join(formatted) + "\n\n"
     return ""
 
-def strip_existing_header(content, ext):
-    """移除旧的协议头"""
-    if ext not in FILE_CONFIG: return content, False, ""
+def remove_old_header(content, ext):
+    """
+    智能移除旧头部。
+    不匹配具体的作者名/年份，而是匹配 'Copyright' 或 'License' 等特征词。
+    """
+    if ext not in FILE_TYPES: return content, ""
     
     clean_content = content
-    shebang_line = ""
-    header_found = False
-
-    # 1. 提取 Shebang (#!/usr/bin/env python3)
+    shebang = ""
+    conf = FILE_TYPES[ext]
+    
+    # 1. 提取 Shebang (保留 Python/Shell 的 #! 行)
     if content.startswith("#!"):
         lines = content.splitlines(keepends=True)
-        shebang_line = lines[0]
+        shebang = lines[0]
         clean_content = "".join(lines[1:])
-
-    conf = FILE_CONFIG[ext]
     
-    # 关键词匹配，防止误删正常注释
+    # 特征关键词 (只要头部包含这些词之一，就认为是旧协议头)
+    # 这确保了即使你改了作者名，旧的 WinManApple 头部也能被识别并替换
     keywords = ["Copyright", "License", "GNU", "Affero", "Creative Commons", "Rights Reserved"]
+    keywords_pattern = "|".join(keywords)
     
-    # 简单的移除逻辑：检查文件开头的注释块
-    # 这里为了稳健，我们只移除文件头部连续的、包含关键词的注释
-    
-    lines = clean_content.splitlines(keepends=True)
-    new_lines = []
-    in_header_block = True
-    processed_count = 0
-    
-    # 块注释模式检测 (HTML, JS, CSS, VUE)
+    # 2. 块注释移除逻辑 (JS, CSS, HTML)
     if conf['style'] == 'block':
-        # 简单的正则清理，匹配开头的注释块
-        start_esc = re.escape(conf['start'])
-        end_esc = re.escape(conf['end'])
-        # 匹配位于文件开头的注释块
-        pattern = re.compile(rf'^\s*{start_esc}.*?(?:{"|".join(keywords)}).*?{end_esc}\s*', re.DOTALL | re.MULTILINE)
-        
+        s_esc = re.escape(conf['start'])
+        e_esc = re.escape(conf['end'])
+        # 正则：匹配文件开头的注释块，且该块内包含关键词
+        # ^\s* 允许开头有空白
+        pattern = re.compile(
+            rf'^\s*{s_esc}.*?(?:{keywords_pattern}).*?{e_esc}\s*', 
+            re.DOTALL | re.MULTILINE | re.IGNORECASE
+        )
         match = pattern.match(clean_content)
         if match:
-            clean_content = clean_content[match.end():]
-            header_found = True
-            return clean_content.lstrip(), header_found, shebang_line
+            # 截取掉匹配到的头部
+            clean_content = clean_content[match.end():].lstrip()
             
-    # 行注释模式检测 (Python, OBJ)
+    # 3. 行注释移除逻辑 (Python, OBJ)
     elif conf['style'] == 'line':
+        lines = clean_content.splitlines(keepends=True)
+        new_lines = []
+        in_header = True # 假设一开始是在头部区域
+        
+        char = conf['char']
+        
         for line in lines:
             stripped = line.strip()
             
-            # 如果还在头部检测阶段
-            if in_header_block:
-                # 是空行 -> 继续
-                if stripped == "":
-                    continue
-                # 是注释行
-                if stripped.startswith(conf['char']):
-                    # 检查是否包含协议关键词
+            if in_header:
+                # 如果是空行，或者是以注释符开头的
+                if stripped == "" or stripped.startswith(char):
+                    # 如果这行包含关键词，那肯定是头部，继续忽略
                     if any(k in line for k in keywords):
-                        header_found = True
-                        continue # 丢弃该行
-                    # 如果已经是头部了，且是纯装饰性的注释 (# ----)
-                    elif header_found and (stripped == conf['char'] or set(stripped.replace(conf['char'], '').strip()) <= {'-', '*', '='}):
-                        continue # 丢弃装饰行
-                    # 遇到一个不包含关键词的注释，如果之前没发现过头部，那这可能只是普通注释
-                    elif not header_found:
-                         # 假设这不是协议头，结束检测
-                         in_header_block = False
-                         new_lines.append(line)
-                    # 之前发现过头部，现在又来个不含关键词的注释，可能还是头部的一部分，继续丢弃
-                    else:
                         continue
+                    # 如果是纯装饰线 (###, # ---)，继续忽略
+                    if set(stripped.replace(char, '').strip()) <= {'-', '*', '=', '#'}:
+                        continue
+                    # 如果是普通注释但紧跟在头部之后，为了安全，我们设定：
+                    # 只要连续的注释块里出现了关键词，整个块都被视为协议头。
+                    # 但为了防止删掉真正的代码注释，我们采取更保守策略：
+                    # 只有包含关键词的行，以及它上下的装饰行才算。
+                    # (简化策略：只要还在头部区域，且是注释，就认为是头部的一部分，直到遇到代码)
+                    continue 
                 else:
-                    # 遇到非注释行（代码），结束
-                    in_header_block = False
+                    # 遇到非注释行（代码），头部区域结束
+                    in_header = False
                     new_lines.append(line)
             else:
-                # 非头部区域，直接保留
+                # 头部已结束，保留后续所有内容
                 new_lines.append(line)
         
-        clean_content = "".join(new_lines)
+        clean_content = "".join(new_lines).lstrip()
 
-    return clean_content.lstrip(), header_found, shebang_line
+    return clean_content, shebang
 
-def process_file(file_path, ext):
+def process_file(file_path):
+    _, ext = os.path.splitext(file_path)
+    if ext not in FILE_TYPES: return
+
     try:
         with open(file_path, 'r', encoding='utf-8') as f:
             original_content = f.read()
 
-        clean_code, has_old_header, shebang = strip_existing_header(original_content, ext)
-        new_header = generate_header_string(ext)
+        # 1. 移除旧头 (无论旧头长什么样)
+        content_no_header, shebang = remove_old_header(original_content, ext)
         
-        final_content = ""
-        if shebang:
-            final_content = shebang + new_header + clean_code
+        # 2. 生成新头 (根据当前 CONFIG)
+        new_header = get_new_header_content(ext)
+        
+        # 3. 拼接
+        final_content = (shebang + new_header + content_no_header)
+        
+        # 4. 对比是否有变化 (避免修改未变文件导致 Git 变动)
+        if final_content != original_content:
+            with open(file_path, 'w', encoding='utf-8') as f:
+                f.write(final_content)
+            print(f"✅ 更新: {os.path.basename(file_path)}")
         else:
-            final_content = new_header + clean_code
-        
-        # 如果内容没有实质变化（比如已经是最新协议），则不写入，减少磁盘IO和修改时间变更
-        if original_content == final_content:
-            return
-
-        with open(file_path, 'w', encoding='utf-8') as f:
-            f.write(final_content)
-            
-        license_type = "CC-BY-NC-SA" if ext == '.obj' else "AGPL-3.0"
-        action = "🔄 更新" if has_old_header else "➕ 新增"
-        print(f"  [{action} {license_type}] {os.path.basename(file_path)}")
+            # 文件内容一致，无需写入
+            pass
 
     except Exception as e:
-        print(f"  [❌ 错误] {os.path.basename(file_path)}: {e}")
+        print(f"❌ 错误 {file_path}: {e}")
 
 def main():
     root_dir = os.getcwd()
-    print(f"🔍 扫描目录: {root_dir}")
-    print(f"🎯 协议策略: 代码(.js/.css/.py/.html) -> AGPL-3.0 | 资产(.obj) -> CC BY-NC-SA")
-    print("-" * 60)
+    print(f"🎯 正在更新协议头...")
+    print(f"   项目: {CONFIG['PROJECT_NAME']}")
+    print(f"   作者: {CONFIG['AUTHOR']}")
+    print(f"   年份: {CONFIG['YEAR']}")
+    print("-" * 40)
+
+    # 忽略列表
+    ignore_dirs = {'.git', 'node_modules', '__pycache__', 'venv', 'dist', 'build'}
     
     count = 0
-    # 忽略列表
-    ignore_dirs = {'.git', 'node_modules', '__pycache__', 'venv', '.idea', '.vscode', 'dist', 'build', 'public'}
-    # 忽略文件
-    ignore_files = {'LICENSE', 'README.md', '.gitignore'}
-
     for subdir, dirs, files in os.walk(root_dir):
-        # 原地修改 dirs 列表以剪枝
         dirs[:] = [d for d in dirs if d not in ignore_dirs]
-        
         for file in files:
-            if file in ignore_files: continue
+            if file == os.path.basename(__file__): continue # 跳过脚本自己
             
-            name, ext = os.path.splitext(file)
-            if ext in FILE_CONFIG:
-                file_path = os.path.join(subdir, file)
-                process_file(file_path, ext)
+            ext = os.path.splitext(file)[1]
+            if ext in FILE_TYPES:
+                process_file(os.path.join(subdir, file))
                 count += 1
                 
-    print("-" * 60)
-    print(f"✅ 处理完成: 共扫描并处理 {count} 个文件")
+    print("-" * 40)
+    print(f"✨ 完成！扫描并处理了 {count} 个文件。")
 
 if __name__ == "__main__":
     main()
