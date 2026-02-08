@@ -8,7 +8,11 @@
 */
 
 // src/ui/modules/H_Data.js
+
 import { reactive } from '../../../lib/vue.esm-browser.js';
+
+// [新增] 定义多人回忆的归档 ID 常量
+export const GROUP_ARCHIVE_ID = 'group_archive';
 
 /**
  * ==========================================
@@ -35,26 +39,45 @@ export const H_Data = reactive({
 
     /**
      * 开启一个新的互动会话
-     * @param {string} charId - 女性角色ID
+     * @param {string|Array} targetInput - 单个ID字符串 或 ID数组
      * @param {string} eventName - 事件名称
+     * @param {Object} contextData - 上下文数据
      */
-    //  增加 contextData 参数 (默认为 null，不影响旧逻辑)
-    startSession(charId, eventName, contextData = null) {
+    startSession(targetInput, eventName, contextData = null) {
+        // 1. 归一化处理：确保 targets 是数组
+        const targets = Array.isArray(targetInput) ? targetInput : [targetInput];
+
+        // 2. 核心分流逻辑：
+        // - 如果只有1人 -> 归档 ID 为该角色 ID (进入个人回忆录)
+        // - 如果有多人 -> 归档 ID 为 GROUP_ARCHIVE_ID (进入"多人羁绊"回忆录)
+        // - 兜底 -> 'unknown'
+        let storageKey = 'unknown';
+        if (targets.length === 1) {
+            storageKey = targets[0];
+        } else if (targets.length > 1) {
+            storageKey = GROUP_ARCHIVE_ID;
+        }
+
         this.currentSession = {
             h_history_id: Date.now().toString() + "_" + Math.floor(Math.random() * 1000),
-            charId: charId,
+            
+            // [修改] charId 现在代表"归档分组ID" (Folder ID)
+            charId: storageKey,
+            
+            // [新增] 真实参与者列表 (即使归档到多人组，也需要知道具体有谁)
+            participants: targets,
+
             eventName: eventName || "未知事件",
             
-            // 🟢 [新增] 存储上下文数据 (将 ChatData 传来的记录存入本次会话)
-            // 这会自动被 archiveCurrentSession 方法深拷贝到历史记录中，无需额外处理
+            // [新增] 存储上下文数据 (保持不变)
             context: contextData, 
 
-            visibleCount: 0, // 可见数，实现点击逐行显示消息的效果
+            visibleCount: 0, 
             startTime: Date.now(),
-            messages: [], // 存储 {role, text, timestamp}
-            unread: 0     // 历史回顾时的未读标记
+            messages: [], 
+            unread: 0     
         };
-        console.log("[H_Data] New session started:", this.currentSession.h_history_id);
+        console.log(`[H_Data] New session started. Folder: ${storageKey}, Participants: ${targets.join(',')}`);
     },
 
     /**
@@ -106,6 +129,25 @@ export const H_Data = reactive({
             return true; // 返回 true 表示还有新消息被揭示
         }
         return false; // 返回 false 表示已经到底了
+    },
+
+    // [新增] 删除指定的历史记录
+    deleteSession(historyId) {
+        const index = this.history.findIndex(item => item.h_history_id === historyId);
+        if (index !== -1) {
+            // 记录一下被删除的归档组，方便调试
+            const folder = this.history[index].charId;
+            
+            // 从数组移除
+            this.history.splice(index, 1);
+            
+            console.log(`[H_Data] 已删除记录: ${historyId} (原归属: ${folder})`);
+            
+            // 可选：如果被删除的正好是当前 UI 正在回放的 (虽然 UI 层通常会处理，但这里可以做个兜底)
+            // 比如通知 UI 关闭回放窗口，但这通常由 UI 组件监听数据变化自动处理
+            return true;
+        }
+        return false;
     },
 
     // ==========================================

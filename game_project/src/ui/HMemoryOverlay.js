@@ -9,6 +9,7 @@
 
 // src/ui/HMemoryOverlay.js
 import { ref, computed, onMounted } from '../../lib/vue.esm-browser.js';
+import { H_Data, GROUP_ARCHIVE_ID } from './modules/H_Data.js';
 
 export default {
     template: `
@@ -37,8 +38,8 @@ export default {
                         :class="{ active: selectedCharId === charId }"
                         @click="selectCharacter(charId)"
                     >
-                        <div class="char-avatar">
-                            {{ getCharacterName(charId)[0] }}
+                        <div class="char-avatar" :style="charId === GROUP_ARCHIVE_ID ? 'background:#9c27b0' : ''">
+                            {{ charId === GROUP_ARCHIVE_ID ? '👥' : getCharacterName(charId)[0] }}
                         </div>
                         <div class="char-info">
                             <div class="char-name">{{ getCharacterName(charId) }}</div>
@@ -67,9 +68,16 @@ export default {
                                 class="event-card"
                                 @click="openSession(session)"
                             >
+                                <button class="delete-card-btn" @click.stop="handleDelete(session)" title="删除这段回忆">×</button>
+
                                 <div class="event-title">{{ session.eventName }}</div>
                                 <div class="event-meta">
                                     <span class="date">{{ formatDate(session.startTime) }}</span>
+                                    
+                                    <span v-if="session.participants && session.participants.length > 1" class="tag-group" style="margin-left:5px; font-weight:bold; color:#e91e63;">
+                                        👥 多人
+                                    </span>
+
                                     <span class="msg-count">💬 {{ session.messages.length }}</span>
                                 </div>
                             </div>
@@ -155,6 +163,9 @@ export default {
 
         // 4. 核心工具：获取角色名字
         const getCharacterName = (id) => {
+            
+            if (id === GROUP_ARCHIVE_ID) return "多人羁绊";
+
             // A. 尝试从队伍 (Party) 中查找 (如莉莉丝)
             if (window.store && window.store.party) {
                 const member = window.store.party.find(p => p.id === id);
@@ -197,7 +208,33 @@ export default {
             });
         };
 
+        // [新增] 删除处理函数
+        const handleDelete = (session) => {
+            // 1. 确认提示
+            if (!confirm(`确定要遗忘这段关于 "${session.eventName}" 的回忆吗？此操作不可撤销。`)) {
+                return;
+            }
+
+            // 2. 调用数据层删除
+            const success = H_Data.deleteSession(session.h_history_id);
+            
+            if (success) {
+                // 3. 同步更新本地 UI 列表 (historyData 是 ref)
+                const idx = historyData.value.findIndex(item => item.h_history_id === session.h_history_id);
+                if (idx !== -1) {
+                    historyData.value.splice(idx, 1);
+                }
+                
+                // 4. 如果删除的是当前正选中的会话，关闭回放界面
+                if (selectedSession.value && selectedSession.value.h_history_id === session.h_history_id) {
+                    selectedSession.value = null;
+                }
+            }
+        };
+
         return {
+            GROUP_ARCHIVE_ID, // [新增]
+            handleDelete,     // [新增]
             historyData,
             groupedHistory,
             selectedCharId,
