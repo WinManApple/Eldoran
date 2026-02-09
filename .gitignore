@@ -5,17 +5,36 @@ __pycache__/
 # VS Code 个人配置
 .vscode/
 
-# Node/JS 依赖包 (如果你没用 npm，这行也没副作用)
+# Node/JS 依赖包
 node_modules/
 
 # 系统垃圾文件
 .DS_Store
 Thumbs.db
 
-# 错误日志 (通常不需要上传调试日志)
+# 错误日志
 *.log
 npm-debug.log*
 
-# 这里的逻辑是：
-# .css, .html, .js, .py, .obj (若是模型) 都会被自动包含，因为它们不在这个名单里。
-# End of ignore list
+# --- 🆕 新增：游戏存档与本地数据 ---
+# 1. 忽略所有常见的存档文件后缀，防止你测试游戏时生成的存档被误传到 GitHub
+*.save
+*.sav
+*.json.bak
+
+# 2. 忽略具体的存档文件夹 (假设你的游戏会把存档导出到 save 目录)
+/saves/*
+# 但是！保留 save 目录结构本身 (非常重要，看下文解释)
+!/saves/.gitkeep
+
+# --- 🆕 新增：本地配置文件 ---
+# 如果你以后有 config.js 这种存 API Key 或本地设置的文件
+# 你应该传一个 config.example.js，而忽略真正的 config.js
+config.js
+config.local.js
+.env
+.env.local
+
+# --- 🆕 新增：Vue/前端构建产物 ---
+# 如果你使用了 npm run build，生成的 dist 文件夹不应该上传源码库
+dist/
