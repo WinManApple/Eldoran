@@ -36,7 +36,7 @@ npm-debug.log*
 # 游戏存档区域 (Game Saves)
 # ==========================
 # 1. 忽略 saves 文件夹内的【所有】文件
-saves/*
+game_project/saves/*
 
 # 2. 【重要】例外规则：不要忽略 .gitkeep 文件
-!saves/.gitkeep
+!game_project/saves/.gitkeep
