@@ -17,7 +17,7 @@
 */
 
 // src/map/mapmanager_modules/MapRegistry.js
-
+// @ts-nocheck
 // 引入地图生成器与主题配置
 import { MapGenerator } from '../MapGenerator.js';
 import { MapTheme } from '../../config/MapThemes.js'; 

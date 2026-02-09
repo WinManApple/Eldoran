@@ -83,13 +83,53 @@ export function useChat() {
         
     };
 
+    /**
+     * 🟢 [新增] 处理静默请求 (不通过 UI 上屏，不记录入 Memory)
+     * 用于 "重发/续写" 或 "系统自动触发" 的场景
+     * @param {string} text - 发送给 LLM 的指令文本
+     */
+    const handleSilentRequest = async (text) => {
+        // 0. 基础校验
+        if (!text || !text.trim()) return;
+
+        const currentChannel = ChatData.currentChannelInfo;
+        if (!currentChannel) {
+            console.error("[Chat] 错误: 未找到当前频道信息");
+            return;
+        }
+        
+        console.log(`[Chat] 发起静默请求 (Silent): ${text}`);
+
+        // 🛑 核心区别：跳过 ChatData.pushUserMessage(text);
+        // 这样这句话就不会出现在玩家的聊天记录里，也不会污染短期记忆
+
+        try {
+            // 3. 发送请求 (Fire and Forget)
+            await Call_Chat.requestChat(
+                text,
+                currentChannel.name,
+                currentChannel.type,
+                currentChannel.id
+            );
+
+        } catch (err) {
+            console.error("[Chat] 静默请求失败:", err);
+            // 错误反馈依然需要上屏，告知玩家为什么没反应
+            ChatData.fillAiReply([
+                { role: "system", text: `❌ 续写失败: ${err.message || "未知错误"}` }
+            ], null, true);
+        }
+    };
+
     // ==========================================
     // 3. 挂载全局接口
     // ==========================================
     // 方便 DialogueOverlay 或其他组件调用
     window.handleUserChat = handleUserChat;
+    window.handleSilentRequest = handleSilentRequest;
 
     return {
-        handleUserChat
+        handleUserChat,
+        handleSilentRequest
     };
 }

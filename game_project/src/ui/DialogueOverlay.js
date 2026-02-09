@@ -17,6 +17,7 @@
 */
 
 // src/ui/DialogueOverlay.js
+// @ts-nocheck
 import { addLog, store } from './modules/store.js';
 import { ChatData } from './modules/ChatData.js'; 
 import { computed, ref, nextTick, onMounted, onUnmounted, watch } from '../../lib/vue.esm-browser.js';
@@ -94,7 +95,7 @@ export default {
                         :class="msg.role === 'user' ? 'player' : msg.role">
                         
                         <div class="msg-avatar" v-if="msg.role !== 'system'">
-                            {{ msg.role === 'user' ? 'YOU' : (msg.name || 'AI') }}
+                            {{ getAvatarLabel(msg) }}
                         </div>
 
                         <div class="msg-bubble">
@@ -119,6 +120,55 @@ export default {
                     </div>
                 </div>
 
+                <div class="void-control-deck">
+                    
+                    <div class="deck-group left">
+                        <transition name="fade">
+                            <button 
+                                v-if="isThinking" 
+                                class="deck-btn danger" 
+                                @click="cancelGeneration"
+                                title="强制切断连接"
+                            >
+                                <span class="icon">■</span> 中断共鸣
+                            </button>
+                        </transition>
+                    </div>
+
+                    <div class="deck-divider"></div>
+
+                    <div class="deck-group right">
+                        <transition name="fade">
+                            <button 
+                                v-if="canFastForward" 
+                                class="deck-btn highlight" 
+                                @click.stop="handleFastForward"
+                                title="快速显示剩余内容"
+                            >
+                                <span class="icon">⏩</span> 快速推进
+                            </button>
+                        </transition>
+                    </div>
+
+                    <button 
+                        class="deck-btn" 
+                        @click="openHistoryEditor"
+                        title="修正历史记录与记忆"
+                    >
+                        <span class="icon">📝</span> 编辑
+                    </button>
+
+                    <button 
+                        class="deck-btn" 
+                        @click="handleResend"
+                        :disabled="isThinking"
+                        title="让 AI 基于当前历史继续生成"
+                    >
+                        <span class="icon">🔄</span> 重发|续写
+                    </button>
+
+                </div>
+
                 <div class="input-area">
                     
                     <div v-if="isOpeningSequence && !hasHiddenMessages" class="adventure-start-container" style="width: 100%; text-align: center;">
@@ -129,12 +179,6 @@ export default {
 
                     <div v-else class="input-wrapper-container" style="width: 100%; display: flex; flex-direction: column;">
                         
-                        <div class="control-bar" v-if="isThinking">
-                            <button class="void-btn danger small" @click="cancelGeneration">
-                                ■ 中断共鸣
-                            </button>
-                        </div>
-
                         <div class="input-wrapper">
                             <textarea 
                                 v-model="inputText" 
@@ -157,14 +201,46 @@ export default {
     setup(props, { emit }) {
         const inputText = ref("");
         const msgContainer = ref(null);
-        // [新增] 滚动控制锁：默认为 true (允许自动滚动)
+        //  滚动控制锁：默认为 true (允许自动滚动)
         const shouldAutoScroll = ref(true);
-        const { handleUserChat } = useChat();
-        
-        // [新增] 从 Store 获取剧情锁状态
+        const { handleUserChat, handleSilentRequest } = useChat();
+        //  从 Store 获取剧情锁状态
         const isOpeningSequence = computed(() => store.isOpeningSequence);
 
-        // [新增] 开始冒险 (解锁逻辑)
+        // ==========================================
+        // 快速推进逻辑 (Fast Forward)
+        // ==========================================
+        
+        // 计算属性：是否可以快速推进
+        // 条件：剩余隐藏消息数量 >= 2 (保留最后1条用于触发事件)
+        const canFastForward = computed(() => {
+            // 获取全量消息列表 (防空判断)
+            const fullList = (ChatData._getFlatList && typeof ChatData._getFlatList === 'function') 
+                ? ChatData._getFlatList() 
+                : [];
+            
+            const hiddenCount = fullList.length - ChatData.visibleBubbleCount;
+            return hiddenCount >= 2;
+        });
+
+        // 处理函数：揭露到 n-1 条
+        const handleFastForward = async () => {
+            const fullList = ChatData._getFlatList();
+            const total = fullList.length;
+
+            if (total > 1) {
+                // 设置可见数为 总数 - 1
+                ChatData.visibleBubbleCount = total - 1;
+                
+                // 强制滚动到底部
+                await scrollToBottom();
+                
+                // 可选：播放一个快速音效
+                // AudioSystem.play('ui_skip'); 
+            }
+        };
+
+        //  开始冒险 (解锁逻辑)
         const startAdventure = () => {
             addLog("⚔️ 剧情结束，解除锁定");
             store.isOpeningSequence = false; // 解锁
@@ -181,7 +257,7 @@ export default {
         const isThinking = computed(() => store.aiStatus.isThinking);
         const isWaiting = computed(() => ChatData.isWaiting);
 
-        // [新增] 计算属性：是否还有更多历史记录可加载
+        //  计算属性：是否还有更多历史记录可加载
         const hasMoreHistory = computed(() => {
             const channel = ChatData.currentChannelInfo;
             // 如果 currentHistoryDepth 小于当前频道消息总长度，说明还有旧消息
@@ -189,11 +265,11 @@ export default {
             return ChatData.currentHistoryDepth < channel.messages.length;
         });
 
-        // [新增] 方法：加载历史并修正滚动条
+        //  方法：加载历史并修正滚动条
         const loadHistory = async () => {
             if (!msgContainer.value) return;
 
-            // [新增] 加载历史属于这一类"不要自动滚到底部"的操作
+            //  加载历史属于这一类"不要自动滚到底部"的操作
             shouldAutoScroll.value = false;
 
             // 1. 记录当前的滚动位置和内容高度 (Scroll Restoration 关键步骤)
@@ -268,7 +344,7 @@ export default {
         // 剧情推进逻辑 (点击空白处)
         const advanceDialogue = () => {
             if (hasHiddenMessages.value || isWaiting.value) {
-                // [新增] 这是一个"手动"推进操作，我们不希望它强制滚到底部
+                //  这是一个"手动"推进操作，我们不希望它强制滚到底部
                 shouldAutoScroll.value = false;
 
                 const didAdvance = ChatData.nextBubble();
@@ -351,7 +427,7 @@ export default {
             return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         };
 
-        // 🟢 [新增] 获取世界状态 (地点与时间)
+        // 🟢  获取世界状态 (地点与时间)
         // 依赖全局 store.worldState，使用可选链防止初始化时报错
         // 🟢 [修改] 获取世界状态 (拼接 地图 + 节点)
         const currentLocation = computed(() => {
@@ -366,6 +442,32 @@ export default {
         
         const currentTime = computed(() => store.worldState?.timeDisplay || "--:--");
 
+        // 🟢 [新增] 获取头像标签 (仅首字)
+        const getAvatarLabel = (msg) => {
+            if (msg.role === 'user') return 'YOU'; // 玩家保持 YOU (或改为 '我')
+            if (msg.role === 'system') return 'SYS';
+            
+            // 获取名字，取第一个字符并转大写
+            const name = msg.name || 'AI';
+            return name.charAt(0).toUpperCase();
+        };
+
+        // 🟢 [新增] 打开历史管理器
+        const openHistoryEditor = () => {
+            // 切换全局菜单状态，App.js 会自动渲染 HistoryManagerOverlay
+            store.currentMenu = 'history_manager';
+        };
+
+        // 🟢 [新增] 重新发送 (AI 续写)
+        const handleResend = () => {
+            // 防呆检查：如果正在思考，则不允许重发
+            if (store.aiStatus.isThinking) return;
+
+            // 模拟用户发送特定指令
+            // 这会让系统认为玩家发送了一条消息，从而触发 Call_Chat -> LLM 流程
+            handleSilentRequest("[系统指令]: 用户无输入，要求基于对话历史进行进一步生成");
+        };
+
         return {
             inputText,
             sortedChannels,
@@ -379,9 +481,12 @@ export default {
             hasMoreHistory,
             currentLocation,
             currentTime,
-            isOpeningSequence, // [新增]
+            isOpeningSequence, // 
 
-            startAdventure,    // [新增]
+            canFastForward,
+            handleFastForward,
+
+            startAdventure,    // 
             loadHistory,
             switchChannel,
             close,
@@ -389,7 +494,10 @@ export default {
             handleKeydown,
             cancelGeneration,
             formatTime,
-            advanceDialogue 
+            advanceDialogue,
+            getAvatarLabel,
+            openHistoryEditor,
+            handleResend
         };
     }
 };

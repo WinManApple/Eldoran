@@ -17,7 +17,7 @@
 */
 
 // src/map/MapManager.js
-
+// @ts-nocheck
 // 引入拆分后的子模块
 import { MapRegistry } from './mapmanager_modules/MapRegistry.js';
 import { MapNavigation } from './mapmanager_modules/MapNavigation.js';

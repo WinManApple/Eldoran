@@ -17,8 +17,10 @@
 */
 
 // src/map/Map3DGeometries.js
-import { NodeType } from './MapData.js';
+// @ts-nocheck
 
+import { NodeType } from './MapData.js';
+// @ts-nocheck
 /**
  * 3D 几何体数据工厂 (OBJ 驱动版)
  * 职责：从 Phaser Cache 中读取 .obj 文件文本，解析为顶点与连线数据。

@@ -70,6 +70,97 @@ export default {
         const showItemTooltip = ref(false);
 
         // ==========================================
+        // 🟢 [新增] 模板导入/导出系统
+        // ==========================================
+        const fileInput = ref(null); // 绑定隐藏的 input 元素
+
+        // 导出功能
+        const handleExportTemplate = () => {
+            try {
+                // 1. 构造导出数据包 (添加版本元数据)
+                const exportData = {
+                    meta: {
+                        version: store.config.game_version,
+                        timestamp: Date.now(),
+                        game: "Eldoran"
+                    },
+                    // 深拷贝 formData 防止引用问题
+                    data: JSON.parse(JSON.stringify(formData))
+                };
+
+                // 2. 创建 Blob 并下载
+                const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                // 文件名: Template_玩家名_时间戳.json
+                a.download = `Template_${formData.playerName || 'New'}_${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                
+                // 3. 清理
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                // 可选: 提示用户
+                // addLog("✅ 模板已导出"); (如果引入了 addLog)
+            } catch (e) {
+                console.error("导出失败:", e);
+                errorMessage.value = "导出失败: " + e.message;
+            }
+        };
+
+        // 触发导入 (点击隐藏的 input)
+        const handleImportClick = () => {
+            if (fileInput.value) {
+                fileInput.value.click();
+            }
+        };
+
+        // 处理文件选择
+        const handleFileChange = (event) => {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                try {
+                    const json = JSON.parse(e.target.result);
+                    
+                    // 简单的格式校验
+                    if (!json.data || !json.meta) {
+                        throw new Error("无效的模板文件结构");
+                    }
+
+                    console.log("[CustomOpening] 正在导入模板...", json.data);
+
+                    // 1. 覆盖基础数据
+                    // 使用 Object.assign 能够保留响应式特性
+                    // 注意：直接 assign 会触发 watcher (尤其是 allocations 变化)
+                    Object.assign(formData, json.data);
+
+                    // 2. [关键] 强制覆盖伴侣列表
+                    // 此时 watcher 可能已经运行并用空对象填充了数组，我们需要用导入的真实数据覆盖它
+                    if (Array.isArray(json.data.companionDetails)) {
+                        formData.companionDetails = JSON.parse(JSON.stringify(json.data.companionDetails));
+                    }
+
+                    // 3. 重置 input (允许重复选择同一文件)
+                    event.target.value = '';
+                    
+                    // 提示
+                    errorMessage.value = ""; // 清除之前的错误
+                    alert(`✅ 模板 "${formData.playerName}" 读取成功！`);
+
+                } catch (err) {
+                    console.error("导入失败:", err);
+                    errorMessage.value = "导入失败: 文件损坏或格式不符";
+                }
+            };
+            reader.readAsText(file);
+        };
+
+        // ==========================================
         // 2. 表单数据 (用户输入)
         // ==========================================
         const formData = reactive({
@@ -357,6 +448,12 @@ export default {
             
             // UI 状态
             showItemTooltip,
+
+            // 🟢 [新增] 导入导出暴露
+            fileInput,
+            handleExportTemplate,
+            handleImportClick,
+            handleFileChange
         };
     },
     template: `
@@ -609,6 +706,25 @@ export default {
         <div class="co-action-bar">
             <template v-if="viewMode === 'EDIT'">
                 <button class="co-btn co-btn-cancel" @click="handleCancel">返回</button>
+                
+                <div class="co-template-tools">
+                    <button class="co-btn co-btn-tool" @click="handleImportClick" title="读取本地模板文件">
+                        <span class="icon">📂</span> 导入模板
+                    </button>
+                    
+                    <button class="co-btn co-btn-tool" @click="handleExportTemplate" title="保存当前设定到本地">
+                        <span class="icon">💾</span> 导出模板
+                    </button>
+
+                    <input 
+                        type="file" 
+                        ref="fileInput" 
+                        accept=".json" 
+                        class="co-hidden-input" 
+                        @change="handleFileChange"
+                    >
+                </div>
+
                 <button class="co-btn co-btn-init" @click="handleInitialize">
                     <span>初始化世界</span>
                 </button>

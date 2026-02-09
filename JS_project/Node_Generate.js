@@ -34,6 +34,27 @@
         ENTRY_COMMENT: "Node_Generate"
     };
 
+    // ==================================================
+    // 🟢 [新增] 特殊设计规则池 (方便后续添加修改)
+    // ==================================================
+    const DESIGN_RULES_POOL = [
+        // 规则 1：强战斗导向 (精英怪/BOSS)
+        "依据对话情节(<Previously_On>与<Chat_History>，其中<Previously_On>作为宏观参考，<Chat_History>作为重点参考，当<Previously_On>与<Chat_History>发生冲突，以<Previously_On>为准)，" +
+        "PORTAL_NEXT_FLOOR与PORTAL_NEXT_CHAPTER的payload内容必须与<Previously_On>里的情节高度关联，必须包含战斗。\n" +
+        "对于PORTAL_NEXT_FLOOR，必须包含精英级别的敌人(属性略高于玩家，必须存在至少2个技能，掉落物必须有一把武器 + 一个装备或一个饰品 + 一个技能书)；\n" +
+        "对于PORTAL_NEXT_CHAPTER，必须包含BOSS级别的敌人(属性远高于玩家，必须存在至少2个强力技能，掉落物必须有一把强力武器|一套装备 + 一个饰品 + 一个技能书)，" +
+        "同时战斗结束后必须使用\"trigger\": \"next_chapter\"来生成下一章的地图。\n",
+
+        // 规则 2：资源消耗/鉴定导向 (物品鉴定/扣费 + BOSS)
+        "依据对话情节(<Previously_On>与<Chat_History>，其中<Previously_On>作为宏观参考，<Chat_History>作为重点参考，当<Previously_On>与<Chat_History>发生冲突，以<Previously_On>为准)，" +
+        "PORTAL_NEXT_FLOOR的payload内容必须与<Previously_On>里的情节高度关联，必须包含remove或者check鉴定环节(注意使用exit)，" +
+        "remove或者check的物品可以是玩家队伍里已经持有的特殊物品(详见<Player_State>)，也可以是依据情节设计的玩家暂时没有的物品，玩家知道需要这个物品后会推进情节进行动态获取的，" +
+        "所以不必担心物品\"不存在\"的问题，不论如何设计，物品必须与情节高度关联。\n" +
+        "如果需要扣费，则必须让玩家队伍\"大出血\"，直接扣掉玩家队伍金币的1/2。(例如<Player_State>显示玩家队伍金币为50000.进入下一层则扣掉25000)；\n" +
+        "特别的，对于PORTAL_NEXT_CHAPTER，必须包含BOSS级别的敌人(属性远高于玩家，必须存在至少2个强力技能，掉落物必须有一把强力武器|一套装备 + 一个饰品 + 一个技能书)，" +
+        "同时战斗结束后必须使用\"trigger\": \"next_chapter\"来生成下一章的地图。\n"
+    ];
+
     window.parent.RPG_LLM_HANDLERS['NODE_GENERATE'] = {
         buildPrompt: async (params) => {
             const helper = window.parent.TavernHelper || window.TavernHelper;
@@ -87,6 +108,13 @@
                 if (params.mapId) {
                     finalPrompt = finalPrompt.replace(/{{params\.mapId}}/g, params.mapId);
                 }
+
+                // ==================================================
+                //  处理 {{Special_Design_Rule}} 宏替换
+                // ==================================================
+                // 随机抽取一条规则
+                const randomRule = DESIGN_RULES_POOL[Math.floor(Math.random() * DESIGN_RULES_POOL.length)];
+                finalPrompt = finalPrompt.replace(/{{Special_Design_Rule}}/g, () => randomRule);
 
                 console.log(`✅ [Node_Genertate] Prompt 构建完成 (含剧情上下文)`);
                 return finalPrompt;

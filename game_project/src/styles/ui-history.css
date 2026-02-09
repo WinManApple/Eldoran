@@ -29,7 +29,7 @@
     height: 100vh;
     background-color: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(5px);
-    z-index: 2000;
+    z-index: 3000;
     
     /* 🟢 [新增] 关键修复：开启鼠标交互，防止点击穿透 */
     pointer-events: auto; 

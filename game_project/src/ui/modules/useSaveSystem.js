@@ -200,7 +200,7 @@ export function useSaveSystem() {
                 partyMemory: Party_Memory.serialize(),
                 hStateMemory: H_State_Memory.serialize(),
 
-                system: { version: "1.0" } // 版本号
+                system: { version: store.config.game_version } // 版本号
             };
 
             const gameData = JSON.parse(JSON.stringify(rawGameData));

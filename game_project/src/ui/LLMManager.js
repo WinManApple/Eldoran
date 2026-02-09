@@ -149,8 +149,32 @@ export default {
                         }
                     }
 
-                    // 4. 🔴 关键修正：这里传入 finalCount，而不是 params.count
-                    return await reshapeLayerPayload(params.startLayer, finalCount);
+                    // 4. 执行生成请求
+                    // 🔴 关键修正：这里传入 finalCount，而不是 params.count
+                    const success = await reshapeLayerPayload(params.startLayer, finalCount);
+
+                    // 5. 🟢 [修复] 手动生成成功后，更新地图的进度标记
+                    // 防止 MapNavigation.js 在玩家移动时误判这些层级为空，再次触发自动生成
+                    if (success && currentMap) {
+                        // 计算本次操作覆盖到的最高层级索引
+                        const generatedMaxLayer = params.startLayer + finalCount - 1;
+
+                        // 获取当前记录的最大层级 (如果没有则设为 -1)
+                        const currentRecord = typeof currentMap.maxGeneratedLayer === 'number' 
+                                            ? currentMap.maxGeneratedLayer 
+                                            : -1;
+
+                        // 只有当生成的层级确实推进了地图进度时，才更新标记
+                        // (避免玩家只是重塑前面的旧层级时，意外把进度倒退)
+                        if (generatedMaxLayer > currentRecord) {
+                            currentMap.maxGeneratedLayer = generatedMaxLayer;
+                            addLog(`[LLMManager] 📍 手动生成更新: 地图进度已推进至 Layer ${generatedMaxLayer} (原: ${currentRecord})`);
+                            // 打印日志方便调试
+                            console.log(`[LLMManager] 📍 手动生成更新: 地图进度已推进至 Layer ${generatedMaxLayer} (原: ${currentRecord})`);
+                        }
+                    }
+
+                    return success;
                 }
             },
             {

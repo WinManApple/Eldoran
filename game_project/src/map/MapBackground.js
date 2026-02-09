@@ -17,7 +17,7 @@
 */
 
 // src/map/MapBackground.js
-
+// @ts-nocheck
 /**
  * 3D 视差深空背景 (MapBackground)
  * 职责：

@@ -17,6 +17,7 @@
 */
 
 // src/map/MapRenderer.js
+// @ts-nocheck
 import { NodeType, NodeState } from './MapData.js';
 import { InputBlocker } from '../systems/InputBlocker.js';
 import { Map3DCamera } from './Map3DCamera.js';

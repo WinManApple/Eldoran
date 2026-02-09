@@ -17,7 +17,7 @@
 */
 
 // src/ui/AppTemplate.js
-
+// @ts-nocheck
 export default `
 <div id="app-root">
     <div class="void-background" v-show="store.isIngame">
@@ -118,8 +118,8 @@ export default `
             </div>
 
             <div class="hud-location-panel">
-                <div class="location-text" id="hud-location-text">{{ worldState.mapName }}</div>
-                <div class="time-text" id="hud-time-text">{{ worldState.timeDisplay }}</div>
+                <div class="location-text" id="hud-location-text">{{ store.worldState.mapName }}</div>
+                <div class="time-text" id="hud-time-text">{{ store.worldState.timeDisplay }}</div>
             </div>
         </div>
 

@@ -17,6 +17,7 @@
 */
 
 // src/map/MapGenerator.js
+// @ts-nocheck
 import { NodeType, NodeState, MapNode } from './MapData.js';
 import { MapTheme } from '../config/MapThemes.js'; // 引入我们刚才写的参数表
 

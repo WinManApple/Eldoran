@@ -17,7 +17,7 @@
 */
 
 // src/ui/App.js
-
+// @ts-nocheck
 import { createApp, computed, ref, onMounted, toRefs } from '../../lib/vue.esm-browser.js';
 import { store, resetStore, RESOLUTIONS } from './modules/store.js';
 
@@ -250,14 +250,7 @@ const App = {
             // 计算属性
             hpPercent, 
             mpPercent,
-            playerStats: store.playerStats,
-            resources: store.resources,
-            worldState: store.worldState,
-            aiStatus: store.aiStatus,
-            aiResult: computed(() => store.aiResult),
-            activeQuest: store.activeQuest,
             
-
             // 系统状态
             ShopSystem,
             RestSystem,

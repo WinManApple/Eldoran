@@ -716,3 +716,78 @@
 .co-result-card::-webkit-scrollbar-thumb:hover {
     background: rgba(0, 210, 255, 0.8); /* 悬停高亮 */
 }
+
+/* =========================================
+   模板导入/导出工具栏样式
+   ========================================= */
+
+/* 工具按钮容器：让两个按钮并排显示，并与左右按钮保持间距 */
+.co-template-tools {
+    display: flex;
+    gap: 12px;
+    align-items: center;
+    margin: 0 20px; /* 左右留出空间，与返回/初始化按钮隔开 */
+}
+
+/* 工具按钮基础样式 */
+.co-btn-tool {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px; /* 图标与文字的间距 */
+    
+    background: rgba(0, 0, 0, 0.4);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #a0a0a0;
+    
+    padding: 8px 16px;
+    font-size: 14px;
+    font-family: inherit;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+/* 鼠标悬停效果：轻微高亮 */
+.co-btn-tool:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.4);
+    color: #ffffff;
+    transform: translateY(-2px); /* 轻微上浮 */
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.3);
+}
+
+/* 点击按下效果 */
+.co-btn-tool:active {
+    transform: translateY(0);
+    background: rgba(255, 255, 255, 0.05);
+}
+
+/* 按钮内的图标样式 (Emoji 或 SVG) */
+.co-btn-tool .icon {
+    font-size: 16px;
+    line-height: 1;
+    filter: drop-shadow(0 0 2px rgba(0,0,0,0.5));
+}
+
+/* 彻底隐藏文件输入框 */
+.co-hidden-input {
+    display: none !important;
+    opacity: 0;
+    width: 0;
+    height: 0;
+    pointer-events: none;
+}
+
+/* 响应式微调：屏幕较窄时缩小间距 */
+@media (max-width: 800px) {
+    .co-template-tools {
+        gap: 8px;
+        margin: 0 10px;
+    }
+    
+    .co-btn-tool {
+        padding: 6px 10px;
+        font-size: 12px;
+    }
+}

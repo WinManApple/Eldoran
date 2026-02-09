@@ -45,10 +45,12 @@
 .hud-top-left-group {
     position: absolute;
     top: 20px; left: 20px;
-    display: flex; /* 关键：弹性布局让子元素横向排列 */
-    align-items: flex-start; /* 顶部对齐 */
-    gap: 10px; /* 两个面板之间的间距 */
-    pointer-events: none; /* 容器本身不阻挡鼠标 */
+    display: flex;
+    /* [修改] 改为纵向排列 (Column) */
+    flex-direction: column; 
+    align-items: flex-start; /* 左对齐 */
+    gap: 8px; /* [修改] 调整垂直间距 */
+    pointer-events: none; 
 }
 
 /* 2. 玩家状态栏 (原 .hud-top-left，移除绝对定位) */
@@ -67,33 +69,40 @@
     flex-shrink: 0; /* 防止被挤压 */
 }
 
-/* 3. 位置与时间面板 (新增) */
+/* 3. 位置与时间面板 (修改) */
 .hud-location-panel {
     background: rgba(10, 10, 18, 0.8) !important;
     border: var(--mana-border) !important;
     box-shadow: var(--mana-glow);
     backdrop-filter: blur(5px);
     border-radius: 10px;
-    padding: 5px 15px;
+    padding: 8px 15px; /* [修改] 调整内边距，让高度自适应 */
     display: flex;
     flex-direction: column;
     justify-content: center;
-    align-items: center;
-    min-width: 140px; /* 最小宽度 */
-    height: 58px; /* 高度尽量与左边对齐 (左边约64+20=84，或者是内容撑开，这里设个固定高度或 auto) */
-    /* 为了视觉更协调，我们让它高度自适应，或者垂直居中 */
-    align-self: center; 
+    /* [修改] 让内部文字左对齐，看起来更整齐 */
+    align-items: flex-start; 
+    min-width: 160px; /* [修改] 稍微加宽一点 */
+    /* height: 58px; [删除] 移除固定高度，允许内容撑开 */
+    
+    /* [修改] 确保自身靠左对齐 */
+    align-self: flex-start; 
     pointer-events: auto;
     box-shadow: 0 4px 10px rgba(0,0,0,0.5);
 }
 
+/* 为了防止太长的地图名把面板撑得太宽，可以限制最大宽度并省略号 (可选) */
 .location-text {
     font-size: 16px;
     font-weight: bold;
     color: #fff;
-    white-space: nowrap; /* 只有这一行变长时，背景才会自动变宽 */
+    /* white-space: nowrap; [保留] 保持不换行，或者改为 normal 允许换行 */
+    white-space: nowrap; 
     text-shadow: 1px 1px 2px #000;
     margin-bottom: 2px;
+    max-width: 300px; /* [新增] 限制最大文字宽度 */
+    overflow: hidden;
+    text-overflow: ellipsis; /* 超出显示省略号 */
 }
 
 .time-text {

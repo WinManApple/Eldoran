@@ -59,7 +59,8 @@ export const DefaultGameConfig = {
     map: {
         lazyGenLayers: 3,    // 惰性加载触发时，每次预生成的层数
         initialGenLayers: 1  // 进入新章节时，初始生成的层数 (需与 Registry 保持一致)
-    }
+    },
 
+    game_version: "1.0"
 
 };

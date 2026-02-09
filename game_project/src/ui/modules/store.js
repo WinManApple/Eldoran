@@ -17,6 +17,7 @@
 */
 
 // src/ui/modules/store.js
+// @ts-nocheck
 import { reactive } from '../../../lib/vue.esm-browser.js';
 import { CharacterModel } from '../../systems/PlayerState.js';
 import { DefaultGameConfig } from '../../config/GameConfig.js';
@@ -164,7 +165,7 @@ export const store = reactive({
         get critRate() { return store.playerState?.critRate || 0; },
         set critRate(v) { if (store.playerState) store.playerState.critRate = v; },
 
-        avatar: "assets/avatars/hero_default.png"
+        // avatar: "assets/avatars/hero_default.png"
     },
 
     /**
@@ -332,10 +333,8 @@ export const resetStore = () => {
     store.combat.battleId = null;
     
     // 4. 环境与 UI 状态重置
-    store.worldState = {
-        mapName: "正在定位...",
-        environment: "default"
-    };
+    store.worldState.mapName = "正在定位...";
+    store.worldState.environment = "default";
     
     // 5. 日志与对话重置
     store.systemLogs = [];
@@ -349,19 +348,18 @@ export const resetStore = () => {
     }
 
     // 🟢 [新增] 彻底重置 AI 交互状态
-    store.aiStatus = {
-        connectionState: 'connected', // 保持连接状态
-        isThinking: false             // 强制停止思考
-    };
+    store.aiStatus.connectionState = 'connected';
+    store.aiStatus.isThinking = false;
     store.aiResult = 'none';
 
-    store.gameTime = {
+    Object.assign(store.gameTime, {
         year: getRandomInt(...TIME_INIT_RANGES.year),
         month: getRandomInt(...TIME_INIT_RANGES.month),
         day: getRandomInt(...TIME_INIT_RANGES.day),
         hour: getRandomInt(...TIME_INIT_RANGES.hour),
         minute: getRandomInt(...TIME_INIT_RANGES.minute)
-    };
+    });
+
     store.questSystem = {
     mainLine: [],
     sideLine: [],

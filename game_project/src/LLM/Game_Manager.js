@@ -17,7 +17,7 @@
 */
 
 // src/LLM/Game_Manager.js
-
+// @ts-nocheck
 import { Protocol } from '../config/Protocol.js';
 import { addLog, store } from '../ui/modules/store.js';
 import { Action_Map_Named, TAG as Tag_Map } from './actions/Action_Map_Named.js';
@@ -279,7 +279,13 @@ export const Game_Manager = {
             addLog(`✨ 世界线变动: 处理了 ${actionCount} 个神谕`);
             
             // 强制刷新 UI (如果 Action 里没做的话，这里做个兜底)
-            if (window.uiStore) window.uiStore.tempMapData = Date.now();
+            if (window.uiStore) {
+                window.uiStore.tempMapData = Date.now(); // 触发 Phaser 重绘
+                
+                // 强制同步 MapManager 的状态到 UI (如地图名变更)
+                // 确保 HUD 左上角的 Location Name 能立即响应 LLM 的修改
+                if (window.mapManager) window.mapManager._syncStateToUI();
+            }
         } else {
             console.warn("[Game_Manager] 未捕获到任何有效标签");
         }
