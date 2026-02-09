@@ -90,6 +90,7 @@
     display: flex;
     padding: 30px;
     gap: 30px;
+    min-height: 0;
 }
 
 .rest-panel {
@@ -100,6 +101,7 @@
     padding: 20px;
     display: flex;
     flex-direction: column;
+    min-height: 0;
 }
 
 .panel-title {
@@ -113,6 +115,7 @@
 /* 左侧：队伍状态列表 */
 .party-status-list {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
     display: flex;
     flex-direction: column;
@@ -150,6 +153,7 @@
 .companion-list {
     flex: 1;
     display: flex;
+    min-height: 0;
     flex-direction: column;
     gap: 10px;
     overflow-y: auto; /* 确保列表过长时可以滚动 */
@@ -299,24 +303,43 @@
     box-shadow: none;
 }
 
-/* --- 底部：离开按钮 (紧凑胶囊) --- */
+/* --- 底部：离开按钮 (增肌版) --- */
 .ro-btn-leave {
-    background: rgba(0, 0, 0, 0.6);
-    border: 1px solid #666 !important;
-    color: #ccc;
+    /* 1. 配色：稍微提亮背景，让它不像黑洞一样沉没 */
+    background: linear-gradient(to bottom, rgba(60, 60, 60, 0.8), rgba(30, 30, 30, 0.9));
+    border: 1px solid rgba(255, 255, 255, 0.3) !important;
+    color: #ddd;
     
-    /* 🟢 [修改] 尺寸大幅缩小 */
-    padding: 8px 40px;      
-    font-size: 1rem;
+    /* 2. 尺寸：大幅增加内边距和最小宽度 */
+    padding: 12px 60px;       /* 上下 12px，左右 60px */
+    min-width: 240px;         /* 最小宽度加倍，让它看起来更稳重 */
+    height: 50px !important;  /* 给他一个明确的高度，不再只是靠内容撑开 */
     
-    border-radius: 30px;
+    /* 3. 字体：放大文字 */
+    font-size: 1.3rem;        /* 从 1rem 提升到 1.3rem */
+    letter-spacing: 3px;      /* 增加字间距，显得更高级 */
+    font-weight: bold;
+    
+    /* 4. 形状 */
+    border-radius: 25px;      /* 保持胶囊圆角 */
     width: auto !important;
-    min-width: 120px;       /* 最小宽度减小 */
+    
+    /* 5. 阴影 */
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
 }
+
 .ro-btn-leave:hover {
-    background: #c0392b; 
+    /* 悬停时变成显眼的红色警告色，符合“离开/关闭”的直觉 */
+    background: linear-gradient(to bottom, #c0392b, #a93226);
     color: #fff;
     border-color: #e74c3c !important;
+    transform: translateY(-2px);
+    box-shadow: 0 6px 15px rgba(192, 57, 43, 0.4);
+}
+
+.ro-btn-leave:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.5);
 }
 
 /* 6. 特效动画 */
@@ -327,4 +350,15 @@
 
 @keyframes fadeIn {
     from { opacity: 0; } to { opacity: 1; }
+}
+
+.rest-footer {
+    height: 80px; /* 给底部留出固定空间 */
+    flex-shrink: 0; /* 👇 关键！禁止被压缩，保证永远显示 */
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-top: 1px solid var(--rest-border);
+    background: rgba(0, 0, 0, 0.4);
+    margin-top: auto; /* 确保它沉底 */
 }
