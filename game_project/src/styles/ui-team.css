@@ -21,6 +21,7 @@
 /* ==========================================
    1. 基础容器与遮罩 (Base Layout)
    ========================================== */
+/* 🟢 修改后：请替换为以下代码 */
 .team-overlay {
     position: fixed;
     top: 0; left: 0; 
@@ -29,37 +30,60 @@
     backdrop-filter: blur(12px);
     z-index: 3500;
     display: flex;
-    justify-content: center;
-    align-items: center;
+    /* 移除 justify-content 和 align-items，改用 padding 和 auto margin 控制布局 */
+    padding: 20px; 
+    overflow: auto; /* 关键：允许外层出现滚动条 */
+    box-sizing: border-box; /* 确保 padding 包含在尺寸内 */
+    
     /* 🟢 关键：允许并拦截鼠标事件，防止穿透 */
     pointer-events: auto; 
     /* 禁止用户意外选中界面文字，提升原生 App 感 */
     user-select: none;
 }
 
+/* 🟢 修改后：请替换为以下代码 */
 .team-window {
-    position: relative; /* 核心修正：确保绝对定位生效 */
-    pointer-events: auto; /* 确保窗口内部可以正常滚动和点击 */
+    position: relative;
+    pointer-events: auto;
+    
+    /* 核心布局调整 */
+    margin: auto; /* 在 flex 容器中自动居中 */
+    
+    /* 尺寸控制：优先尝试使用默认大尺寸，但受限于屏幕 */
     width: 1150px;
+    max-width: 100%; /* 屏幕窄时自动缩小宽度 */
+    
     height: 750px;
+    max-height: 100%; /* 屏幕矮时自动缩小高度 */
+    
+    /* 最小保护尺寸：如果屏幕比这个还小，就触发外层 .team-overlay 的滚动条 */
+    min-width: 800px; 
+    min-height: 500px;
+
     background: rgba(10, 10, 25, 0.95);
     border: 1px solid rgba(102, 204, 255, 0.4);
     box-shadow: 0 0 30px rgba(102, 204, 255, 0.15);
     border-radius: 12px;
     display: grid;
-    grid-template-columns: 260px 1fr; /* 左侧列表 | 右侧内容区 */
+    grid-template-columns: 260px 1fr;
     overflow: hidden;
+    flex-shrink: 0; /* 防止在极小空间下被过度挤压变形 */
 }
 
 /* ==========================================
    2. 左侧成员列表 (Sidebar)
    ========================================== */
+/* 🟢 修改后：请替换为以下代码 */
 .member-list {
     background: rgba(0, 0, 0, 0.3);
     border-right: 1px solid rgba(102, 204, 255, 0.15);
     padding: 25px 15px;
     display: flex;
     flex-direction: column;
+    
+    /* 新增：允许侧边栏内部滚动 */
+    overflow-y: auto; 
+    height: 100%; /* 占满 grid 分配的高度 */
 }
 
 .side-title {
@@ -102,6 +126,8 @@
     display: flex;
     flex-direction: column;
     overflow: hidden;
+    /* 新增：防止 Flex/Grid 子项在缩小时撑破容器 */
+    min-height: 0; 
 }
 
 .nav-tabs {
