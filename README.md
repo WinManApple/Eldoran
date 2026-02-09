@@ -59,6 +59,19 @@ The chat history is divided into a main timeline and multiple side branches, wit
 
 ---
 
+## 🛠️ 环境准备
+
+本项目基于以下开源项目构建或运行，请确保您已正确配置相关环境：
+
+* **核心环境**: [SillyTavern](https://github.com/SillyTavern/SillyTavern) — 交互式大模型前端界面。
+* **官方文档**: [SillyTavern Documentation](https://docs.sillytavern.app/) — 获取详细的配置指引。
+* **辅助插件**: [JS-Slash-Runner](https://github.com/N0VI028/JS-Slash-Runner) — 用于扩展脚本功能。
+* **辅助文档**: [JS-Slash-Runner 使用指南](https://n0vi028.github.io/JS-Slash-Runner-Doc/)。
+
+## 📜 致谢
+
+感谢以上项目的开发者为开源社区做出的贡献。
+
 ## 💻 安装步骤 / Installation
 
 1.  **Clone the Repository / 克隆仓库**
@@ -116,7 +129,7 @@ The chat history is divided into a main timeline and multiple side branches, wit
 > This project is intended strictly for adults aged **18 and above** (or the legal age of majority in your jurisdiction). By accessing this repository, you confirm that you are of legal age.
 >
 > **2. Nature of Content / 内容性质**
-> **本项目源代码本身不包含任何色情、淫秽或非法的媒体资源（如图片、音频、视频）。** 仓库内的所有代码（.js, .vue, .html 等）仅为游戏逻辑与交互框架。
+> **本项目源代码本身不包含任何色情、淫秽或非法的媒体资源（如图片、音频、视频）。** 仓库内的所有代码（.js, .css, .html 等）仅为游戏逻辑与交互框架。
 > **The source code of this project explicitly DOES NOT contain any pornographic, obscene, or illegal media assets.** All code (scripts, UI components, logic) provided herein serves solely as a framework for game mechanics and interaction.
 >
 > **3. User Responsibility / 用户责任**
@@ -134,7 +147,7 @@ The chat history is divided into a main timeline and multiple side branches, wit
 本项目采用 **混合授权模式 (Hybrid Licensing)**，请务必注意区分 **代码** 与 **资产** 的不同授权条款。
 
 ### 1. 💻 源代码 (Source Code)
-> 适用范围：所有 `.js`, `.vue`, `.html`, `.css` 文件及逻辑脚本。
+> 适用范围：所有 `.js`, `.html`, `.css` 文件及逻辑脚本。
 
 由于本项目是基于 SillyTavern 构建的扩展/模组，代码部分严格遵循 **[GNU Affero General Public License v3.0 (AGPL-3.0)](https://www.gnu.org/licenses/agpl-3.0.html)** 协议。
 
@@ -159,7 +172,7 @@ The chat history is divided into a main timeline and multiple side branches, wit
 
 ### ⚠️ 关于商业使用的重要说明 (Commercial Use)
 
-* **对于代码**：只要您严格遵守 AGPL-3.0 的**开源义务**，代码部分的商业使用（如提供付费托管服务但公开源码）是被许可的。但**严禁闭源商用**。
+* **对于代码**：**严禁闭源商用**。
 * **对于资产**：**严禁任何未经授权的商业使用**。
 
 如果您希望获得 **资产部分的商业授权**（例如在您的商业游戏中使用本项目的剧情设定），或希望进行特殊的商业合作，请务必联系作者进行谈判。
