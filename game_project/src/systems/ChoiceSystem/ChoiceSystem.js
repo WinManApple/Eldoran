@@ -612,8 +612,6 @@ export class ChoiceSystem {
 
     }
 
-    
-
 }
 
 ChoiceSystem._lineTimers = [];
