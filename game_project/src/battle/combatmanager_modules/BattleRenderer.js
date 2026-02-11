@@ -63,8 +63,13 @@ export function renderBattlefield(manager) {
 
                 <div class="player-stats">
                     <div class="stat-row"><span>攻击:</span><span id="${actor.id}-attack">${actor.atk}</span></div>
-                    <div class="stat-row"><span>防御:</span><span id="${actor.id}-defense">${actor.def_phys}</span></div>
+                    
                     <div class="stat-row"><span>暴击:</span><span id="${actor.id}-crit">${Math.floor(actor.critRate * 100)}%</span></div>
+                    
+                    <div class="stat-row" title="物理抗性 / 魔法抗性">
+                        <span>抗性:</span>
+                        <span id="${actor.id}-res" style="font-size: 0.85em; display: flex; gap: 5px;">--</span>
+                    </div>
                 </div>
                 <div class="buff-list" id="${actor.id}-buffs">健康</div>
             `;
@@ -82,8 +87,13 @@ export function renderBattlefield(manager) {
 
                 <div class="enemy-stats">
                     <div class="stat-row"><span>攻击:</span><span id="${actor.id}-attack">${actor.atk}</span></div>
-                    <div class="stat-row"><span>防御:</span><span id="${actor.id}-defense">${actor.def_phys}</span></div>
+                    
                     <div class="stat-row"><span>属性:</span><span id="${actor.id}-element">${actor.element || '无'}</span></div>
+                    
+                    <div class="stat-row">
+                        <span>抗性:</span>
+                        <span id="${actor.id}-res" style="font-size: 0.85em; display: flex; gap: 5px;">--</span>
+                    </div>
                 </div>
                 <div class="enemy-debuff" id="${actor.id}-debuffs">正常</div>
             `;
@@ -93,35 +103,131 @@ export function renderBattlefield(manager) {
 }
 
 /**
- * 2. 更新角色实时数值 (血条、蓝条、属性文本)
+ * 辅助：格式化抗性显示 (标准版)
+ * 逻辑：
+ * - 负数 (-) = 抗性 = 减伤 (绿色)
+ * - 正数 (+) = 弱点 = 增伤 (红色)
+ */
+function formatResText(physRes, magicRes) {
+    const formatSingle = (val, typeName) => {
+        // 1. 安全检查：确保 val 是有效数字且不为 0（防止除以零），默认为 1.0 (无修正)
+        const resValue = (val !== undefined && val !== null && !isNaN(val)) ? Math.max(0.1, val) : 1.0;
+        
+        // 2. 计算实际伤害倍率 (倒数)
+        const multiplier = 1 / resValue;
+        
+        // 3. 计算相对于 1.0 的偏移百分比
+        // diff < 0 代表减伤，diff > 0 代表增伤
+        const diff = multiplier - 1;
+        const pct = Math.round(Math.abs(diff) * 100);
+        
+        // 如果差异极小（小于1%），则视为正常承伤
+        if (pct < 1) return null; 
+
+        // 4. 判定显示文案与颜色
+        if (diff < 0) {
+            // 伤害倍率小于 1.0 -> 伤害减少 (绿色)
+            return `<span style="color: #44ff44; cursor: help;" 
+                    title="${typeName}抗性值: ${resValue.toFixed(2)}，有效降低了承受伤害">
+                    ${typeName}:伤害减少 ${pct}%
+                    </span>`;
+        } else {
+            // 伤害倍率大于 1.0 -> 伤害增加 (红色)
+            return `<span style="color: #ff4444; cursor: help;" 
+                    title="${typeName}抗性值: ${resValue.toFixed(2)}，使该类型伤害变得致命">
+                    ${typeName}:伤害增加 ${pct}%
+                    </span>`;
+        }
+    };
+
+    const pText = formatSingle(physRes, '物理');
+    const mText = formatSingle(magicRes, '魔法');
+
+    if (!pText && !mText) return '<span style="color: #666;">--</span>';
+    
+    return [pText, mText].filter(t => t).join(' ');
+}
+
+/**
+ * 2. 更新角色实时数值 (血条、蓝条、属性文本、抗性状态)
  */
 export function updateCharacterUI(manager) {
     manager.state.actors.forEach(actor => {
         const id = actor.id;
-        const hpFill = document.getElementById(`${id}-hp-fill`);
-        if (!hpFill) return;
-
-        const hpPct = (actor.hp / actor.maxHp) * 100;
-        hpFill.style.width = `${hpPct}%`;
-        document.getElementById(`${id}-hp-text`).textContent = `${actor.hp}/${actor.maxHp}`;
         
-        if (actor.isPlayer) {
-            const mpPct = (actor.mp / actor.maxMp) * 100;
-            document.getElementById(`${id}-mp-fill`).style.width = `${mpPct}%`;
-            document.getElementById(`${id}-mp-text`).textContent = `${actor.mp}/${actor.maxMp}`;
-            document.getElementById(`${actor.id}-attack`).textContent = actor.atk;
-            document.getElementById(`${actor.id}-defense`).textContent = actor.def_phys;
-            document.getElementById(`${id}-crit`).textContent = `${Math.floor(actor.critRate * 100)}%`;
+        // === 1. 更新通用部分 (HP & 攻击力) ===
+        
+        // 更新血条宽度
+        const hpFill = document.getElementById(`${id}-hp-fill`);
+        if (hpFill) {
+            const hpPct = Math.max(0, Math.min(100, (actor.hp / actor.maxHp) * 100));
+            hpFill.style.width = `${hpPct}%`;
+        }
+        
+        // 更新血量文本
+        const hpText = document.getElementById(`${id}-hp-text`);
+        if (hpText) {
+            hpText.textContent = `${actor.hp}/${actor.maxHp}`;
+        }
+        
+        // 更新攻击力数值
+        const atkEl = document.getElementById(`${id}-attack`);
+        if (atkEl) {
+            atkEl.textContent = actor.atk;
         }
 
-        // 更新状态标签
+        // 🟢 [新增] 统一更新抗性 (玩家和敌人共用逻辑)
+        // 这里的 HTML 结构需要在 renderBattlefield 中预先创建好
+        const resEl = document.getElementById(`${id}-res`);
+        if (resEl) {
+            // 使用辅助函数生成带颜色的 HTML
+            resEl.innerHTML = formatResText(actor.res_phys, actor.res_magic);
+        }
+
+        // === 2. 更新玩家特有部分 (MP & 暴击) ===
+        if (actor.isPlayer) {
+            // 更新 MP 条
+            const mpFill = document.getElementById(`${id}-mp-fill`);
+            if (mpFill) {
+                const mpPct = Math.max(0, Math.min(100, (actor.mp / actor.maxMp) * 100));
+                mpFill.style.width = `${mpPct}%`;
+            }
+            
+            const mpText = document.getElementById(`${id}-mp-text`);
+            if (mpText) {
+                mpText.textContent = `${actor.mp}/${actor.maxMp}`;
+            }
+
+            // 更新暴击率
+            const critEl = document.getElementById(`${id}-crit`);
+            if (critEl) {
+                critEl.textContent = `${Math.floor(actor.critRate * 100)}%`;
+            }
+        }
+
+        // === 3. 更新状态文本 (Buffs/Debuffs/Stun/Dead) ===
         const buffEl = actor.isPlayer ? document.getElementById(`${id}-buffs`) : document.getElementById(`${id}-debuffs`);
+        
         if (buffEl) {
-            if (actor.hp <= 0) buffEl.textContent = "倒地";
-            else if (actor.isStunned) buffEl.textContent = "眩晕";
-            else if (actor.buffs.length > 0) {
-                buffEl.textContent = actor.buffs.map(b => b.type.substring(0, 1).toUpperCase() + "↑").join(' ');
-            } else buffEl.textContent = "正常";
+            if (actor.hp <= 0) {
+                buffEl.textContent = "倒地";
+                buffEl.style.color = "#888";
+            } else if (actor.isStunned) {
+                buffEl.textContent = "眩晕";
+                buffEl.style.color = "#ffcc00";
+            } else if (actor.buffs.length > 0 || actor.debuffs.length > 0) {
+                // 简单的状态摘要显示
+                const buffNames = actor.buffs.map(b => "⬆️"); // 增益显示向上箭头
+                const debuffNames = actor.debuffs.map(b => "⬇️"); // 减益显示向下箭头
+                const dotNames = actor.dots.length > 0 ? ["🔥"] : []; // DOT 显示火
+
+                const allStatus = [...buffNames, ...debuffNames, ...dotNames];
+                buffEl.textContent = allStatus.length > 0 ? allStatus.join(' ') : "正常";
+                buffEl.style.color = "#fff";
+            } else {
+                buffEl.textContent = "正常";
+                buffEl.style.color = "#aaa";
+            }
         }
     });
 }

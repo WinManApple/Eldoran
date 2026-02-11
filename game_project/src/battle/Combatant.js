@@ -80,10 +80,10 @@ export class Combatant {
         return Effects.updateEffects(this);
     }
 
+    // 🟢 修改后 (添加 return，将结果传递出去)
     applySkillEffect(effectData, target) {
-        Effects.applySkillEffect(this, effectData, target);
+        return Effects.applySkillEffect(this, effectData, target);
     }
-
     // === 3. 战斗计算核心 (委派至 calculator.js) ===
 
     attackTarget(target, skill = null) {
@@ -94,20 +94,28 @@ export class Combatant {
         let calcResult = { damage: 0, isCritical: false };
         let isDodged = false;
         
-        let effectSuccess = false;
+        // 🟢 [新增] 效果执行详情容器
+        let effectDetails = [];
 
         if (skill) {
             // 计算技能伤害
             calcResult = this.calculateSkillDamage(skill, target);
-            
-            //注意，这是不再进行MP计算处理
-            // MP 消耗已由 BattleEngine.js 在指令解析阶段统一处理 (支持配置倍率)
+                        
+            // 🟢 [修改] 宽松的特效触发逻辑 (支持混合技能 & 扁平结构)
+            // 不再限制 skill.type 必须是 BUFF/STUN/DOT，
+            // 只要有 effect 数据，或者本身包含特效字段，就尝试触发。
 
-            // 处理技能附带的 Buff/Debuff 效果
-            const effectTypes = ['ACTIVE_BUFF', 'STUN', 'DOT'];
-            
-            if (effectTypes.includes(skill.type) && skill.effect) {
-                effectSuccess = this.applySkillEffect(skill.effect, target); 
+            let effectPayload = skill.effect;
+
+            // 兼容性回退：如果没有 effect 对象，但在 skill 根节点发现了特效特征
+            if (!effectPayload && (skill.stat || skill.dotType || skill.type === 'STUN' || skill.type === 'DOT' || skill.type === 'ACTIVE_BUFF')) {
+                effectPayload = skill;
+            }
+
+            if (effectPayload) {
+                // 🟢 [修改] 获取详细结果对象
+                const res = this.applySkillEffect(effectPayload, target);
+                effectDetails = res.outcomes; // 保存战报列表
             }
         } else {
             // 普通攻击
@@ -133,7 +141,7 @@ export class Combatant {
             isAdvantage: calcResult.isAdvantage && !isDodged,
             dodged: isDodged,
             skillUsed: skill ? skill.name : null,
-            effectSuccess: effectSuccess
+            effectDetails: effectDetails
         };
     }
     

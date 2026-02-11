@@ -33,6 +33,10 @@ import { Party_Memory } from '../../LLM/memory/Party_Memory.js';
 import { H_Memory } from '../../LLM/memory/H_Memory.js';
 import { CharacterModel } from '../../systems/PlayerState.js';
 import { H_State_Memory } from '../../LLM/memory/H_State_Memory.js';
+import { Action_LLM } from '../../LLM/actions/Action_LLM.js';
+
+// 模块级变量，用于暂存脚本执行前的纯净状态
+let tempBaseline = null;
 
 /**
  * 深拷贝工具
@@ -59,6 +63,84 @@ const getPhaserCamera = () => {
 // 快照数量限制
 const snap_shot_count = 10;
 
+// 🟢 [新增] 内部辅助：构建快照数据包 (从原 capture 中提取)
+const _createSnapshotData = (label) => {
+    // 🟢 [新增] 抓取相机数据 (逻辑保持不变)
+    let cameraData = null;
+    const cam = getPhaserCamera();
+    if (cam && typeof cam.serialize === 'function') {
+        cameraData = cam.serialize();
+    }
+
+    return {
+        timestamp: Date.now(),
+        label: label,
+        
+        // --- 1. Store 基础状态 ---
+        store: {
+            isDialogueActive: store.isDialogueActive,
+            currentMenu: store.currentMenu,
+            worldState: deepClone(store.worldState || {}),
+            gameTime: deepClone(store.gameTime || {}),
+            activeQuest: deepClone(store.activeQuest),
+            playerStats: deepClone(store.playerStats || {}),
+            hData: deepClone(store.hData || {}),
+            party: (store.party || []).map(m => (m && typeof m.serialize === 'function') ? m.serialize() : deepClone(m))
+        },
+        
+        // --- 2. Map ---
+        map: (window.mapManager && typeof window.mapManager.serialize === 'function') 
+                ? window.mapManager.serialize() 
+                : null,
+
+        camera: cameraData,
+        
+        location: window.mapManager ? {
+            activeMapId: window.mapManager.activeMapId,
+            currentNodeId: window.mapManager.currentMap ? window.mapManager.currentMap.currentNodeId : null
+        } : null,
+        
+        // --- 3. Chat ---
+        chat: {
+            channels: deepClone(ChatData.channels || {}),
+            activeChannelId: ChatData.activeChannelId,
+            visibleBubbleCount: ChatData.visibleBubbleCount || 0
+        },
+        
+        // --- 4. H System ---
+        hSystem: {
+            uiData: {
+                ...(H_Data && typeof H_Data.serialize === 'function' ? H_Data.serialize() : {}),
+                currentSession: deepClone(H_Data.currentSession)
+            },
+            runtime: {
+                isActive: HInteractionSystem.isActive || false,
+                status: HInteractionSystem.status || 'idle',
+                targetCharIds: deepClone(HInteractionSystem.targetCharIds || []),
+                activeCharId: HInteractionSystem.activeCharId,
+                context: deepClone(HInteractionSystem.context || {}),
+                statsMap: deepClone(HInteractionSystem.statsMap || {}),
+                sessionAccumulator: deepClone(HInteractionSystem.sessionAccumulator || {}),
+                actionCount: HInteractionSystem.actionCount || 0,
+                totalScore: HInteractionSystem.totalScore || 0,
+                currentScript: deepClone(HInteractionSystem.currentScript),
+                currentChoices: deepClone(HInteractionSystem.currentChoices || []),
+                settlementResult: deepClone(HInteractionSystem.settlementResult)
+            }
+        },
+        
+        // --- 5. Memory ---
+        memory: {
+            plot: (Plot_Memory && Plot_Memory.serialize) ? Plot_Memory.serialize() : {},
+            chat: (Chat_Memory && Chat_Memory.serialize) ? Chat_Memory.serialize() : {},
+            npc: (Npc_Memory && Npc_Memory.serialize) ? Npc_Memory.serialize() : {},
+            party: (Party_Memory && Party_Memory.serialize) ? Party_Memory.serialize() : {},
+            h: (H_Memory && H_Memory.serialize) ? H_Memory.serialize() : {},
+            hState: (H_State_Memory && H_State_Memory.serialize) ? H_State_Memory.serialize() : {}
+        }
+    };
+};
+
 // 响应式状态
 const state = reactive({
     snapshots: [], 
@@ -68,106 +150,69 @@ const state = reactive({
 export const useSnapshot = () => {
 
     /**
+     * 🟢 [新增] 初始化基准快照 (在脚本执行前调用)
+     * 作用：冻结当前的纯净状态，供后续 capture 使用
+     */
+    const initBaseline = (scriptContent) => {
+        try {
+            console.log("[Snapshot] 🧊 正在冻结基准状态...");
+            // 构建一份完整的数据，但不放入列表
+            const baseData = _createSnapshotData("BASELINE");
+            tempBaseline = {
+                data: baseData,
+                script: scriptContent // 记录即将执行的脚本
+            };
+        } catch (e) {
+            console.error("[Snapshot] 基准冻结失败:", e);
+        }
+    };
+
+    /**
+     * 🟢 [新增] 清理基准 (在脚本执行完后调用)
+     */
+    const clearBaseline = () => {
+        if (tempBaseline) {
+            // console.log("[Snapshot] 🧊 基准状态已释放");
+            tempBaseline = null;
+        }
+    };
+
+    /**
      * 📸 捕获快照
      */
     const capture = (label = "系统自动保存") => {
         try {
             if (!store) return;
 
-            // 🚫 [新增] 检查战斗或抉择状态，禁止快照
+            // 🚫 [检查] 战斗状态禁止快照 (抉择/弹窗不禁止)
             if (store.combat?.isActive) {
                 addLog("⚠️ 战斗期间无法进行快照捕获");
                 return;
             }
-            if (store.choice?.isActive) {
-                addLog("⚠️ 抉择期间无法进行快照捕获");
-                return;
-            }
-            
-            // 🟢 [新增] 抓取相机数据
-            let cameraData = null;
-            const cam = getPhaserCamera();
-            if (cam && typeof cam.serialize === 'function') {
-                cameraData = cam.serialize();
-                console.log(`[Snapshot] 📸 成功抓取视角: PanY=${cameraData.panY.toFixed(1)}`);
+
+            let finalSnapshot = null;
+
+            // 🟢 [核心逻辑] 智能选择数据源
+            if (tempBaseline) {
+                // A. 如果存在基准（说明正处于脚本 await 期间）
+                // 使用基准数据（纯净状态），而不是当前被脚本修改了一半的脏状态
+                console.log("[Snapshot] ⚡ 检测到活跃脚本，使用基准状态进行保存");
+                finalSnapshot = deepClone(tempBaseline.data);
+                finalSnapshot.label = label;
+                finalSnapshot.timestamp = Date.now();
+                // 注入待重放的脚本
+                finalSnapshot.pendingScript = tempBaseline.script;
             } else {
-                console.warn("[Snapshot] ⚠️ 未能抓取视角数据");
+                // B. 普通状态：直接构建当前状态
+                finalSnapshot = _createSnapshotData(label);
+                console.log(`[Snapshot] 📸 完整快照已构建`);
             }
 
-            const snapshotData = {
-                timestamp: Date.now(),
-                label: label,
-                
-                // --- 1. Store 基础状态 ---
-                store: {
-                    isDialogueActive: store.isDialogueActive,
-                    currentMenu: store.currentMenu,
-                    worldState: deepClone(store.worldState || {}),
-                    gameTime: deepClone(store.gameTime || {}),
-                    activeQuest: deepClone(store.activeQuest),
-                    playerStats: deepClone(store.playerStats || {}),
-                    hData: deepClone(store.hData || {}),
-                    party: (store.party || []).map(m => (m && typeof m.serialize === 'function') ? m.serialize() : deepClone(m))
-                },
-                
-                // --- 2. Map ---
-                map: (window.mapManager && typeof window.mapManager.serialize === 'function') 
-                     ? window.mapManager.serialize() 
-                     : null,
-
-                // 🟢 [新增] 记录相机状态
-                camera: cameraData,
-                
-                // 🟢 [新增] 记录精确位置指针 (用于修正地图反序列化后的指针)
-                location: window.mapManager ? {
-                    activeMapId: window.mapManager.activeMapId,
-                    currentNodeId: window.mapManager.currentMap ? window.mapManager.currentMap.currentNodeId : null
-                } : null,
-                
-                // --- 3. Chat ---
-                chat: {
-                    channels: deepClone(ChatData.channels || {}),
-                    activeChannelId: ChatData.activeChannelId,
-                    visibleBubbleCount: ChatData.visibleBubbleCount || 0
-                },
-                
-                // --- 4. H System ---
-                hSystem: {
-                    uiData: {
-                        ...(H_Data && typeof H_Data.serialize === 'function' ? H_Data.serialize() : {}),
-                        currentSession: deepClone(H_Data.currentSession)
-                    },
-                    runtime: {
-                        isActive: HInteractionSystem.isActive || false,
-                        status: HInteractionSystem.status || 'idle',
-                        targetCharIds: deepClone(HInteractionSystem.targetCharIds || []),
-                        activeCharId: HInteractionSystem.activeCharId,
-                        context: deepClone(HInteractionSystem.context || {}),
-                        statsMap: deepClone(HInteractionSystem.statsMap || {}),
-                        sessionAccumulator: deepClone(HInteractionSystem.sessionAccumulator || {}),
-                        actionCount: HInteractionSystem.actionCount || 0,
-                        totalScore: HInteractionSystem.totalScore || 0,
-                        currentScript: deepClone(HInteractionSystem.currentScript),
-                        currentChoices: deepClone(HInteractionSystem.currentChoices || []),
-                        settlementResult: deepClone(HInteractionSystem.settlementResult)
-                    }
-                },
-                
-                // --- 5. Memory ---
-                memory: {
-                    plot: (Plot_Memory && Plot_Memory.serialize) ? Plot_Memory.serialize() : {},
-                    chat: (Chat_Memory && Chat_Memory.serialize) ? Chat_Memory.serialize() : {},
-                    npc: (Npc_Memory && Npc_Memory.serialize) ? Npc_Memory.serialize() : {},
-                    party: (Party_Memory && Party_Memory.serialize) ? Party_Memory.serialize() : {},
-                    h: (H_Memory && H_Memory.serialize) ? H_Memory.serialize() : {},
-                    hState: (H_State_Memory && H_State_Memory.serialize) ? H_State_Memory.serialize() : {}
-                }
-            };
-
-            state.snapshots.unshift(snapshotData);
-            if (state.snapshots.length > snap_shot_count) state.snapshots.pop();
-            addLog(`快照已捕获: ${label}`);
-            console.log(`[Snapshot] 📸 完整快照已构建 (含相机数据)`);
+            if (finalSnapshot) {
+                state.snapshots.unshift(finalSnapshot);
+                if (state.snapshots.length > snap_shot_count) state.snapshots.pop();
+                addLog(`快照已捕获: ${label}`);
+            }
 
         } catch (e) {
             console.error("[Snapshot] 捕获失败:", e);
@@ -319,11 +364,41 @@ export const useSnapshot = () => {
                 if(H_Memory.deserialize) H_Memory.deserialize(snap.memory.h);
                 if(H_State_Memory.deserialize) H_State_Memory.deserialize(snap.memory.hState);
             }
+
+            // 强制重置交互状态
+            // 确保回溯后，任何挂起的抉择、弹窗或战斗界面都被关闭
+            // 这实现了"回到事件触发前那一刻"的效果（Promise链已断，界面需复位）
+            if (store.choice) store.choice.isActive = false;
+            if (store.transition) store.transition.isActive = false;
+            // 如果快照数据里没有战斗状态（通常capture时拦截了战斗），这里也强制关闭
+            if (store.combat && !store.combat.isActive) store.combat.isActive = false;
             
             store.currentMenu = targetMenu;
 
             state.isVisible = false;
             addLog("✅ 时空已重置");
+
+            // =================================================
+            // 🟢 [核心新增] 自动重放逻辑 (Auto Replay)
+            // =================================================
+            if (snap.pendingScript) {
+                console.log("[Snapshot] 🔄 检测到挂起脚本，正在重放...");
+                
+                // 使用 setTimeout 将执行推迟到下一帧，确保 UI 和数据已经完全就绪
+                // 且避免在 restore 的调用栈中直接触发新的 await
+                setTimeout(async () => {
+                    try {
+                        addLog("⚡ 正在重建因果律 (脚本重放)...");
+                        // 注意：这里调用 execute 会再次触发 initBaseline，这是符合预期的
+                        // 因为回溯后的状态就是纯净状态，再次冻结它作为新的基准完全没问题
+                        await Action_LLM.execute(snap.pendingScript);
+                    } catch (e) {
+                        console.error("[Snapshot] 脚本重放失败:", e);
+                        addLog("❌ 因果律重建失败");
+                    }
+                }, 100);
+            }
+
             return true;
 
         } catch (e) {
@@ -335,5 +410,5 @@ export const useSnapshot = () => {
 
     const toggleUI = () => state.isVisible = !state.isVisible;
 
-    return { state, capture, restore, remove, toggleUI };
+    return { state, capture, restore, remove, toggleUI, initBaseline, clearBaseline };
 };

@@ -73,7 +73,11 @@ export const TeamOverlay = {
 
             // 🟢 [补全] 物品删除确认状态 (必须添加这两个变量，否则会报错)
             showDeleteItemConfirm: false,
-            itemToDelete: null
+            itemToDelete: null,
+            
+            // 🟢 [新增] 技能遗忘确认状态
+            showForgetConfirm: false,
+            skillToForget: null
 
         };
     },
@@ -155,20 +159,28 @@ export const TeamOverlay = {
         },
 
         // 🟢 修复：标准化技能数据，解决动态技能不显示描述的问题
+        // 🟢 修改后 (替换整个 memberSkills 方法)
         memberSkills() {
             if (!this.member) return [];
+            
+            // 获取当前装备的 ID 列表
+            const equippedIds = this.member.skills.equipped;
+
             return this.member.skills.learned.map(skill => {
                 const data = (typeof skill === 'object') ? skill : GameDatabase.Skills[skill];
                 return data;
             })
-            .filter(s => s) // 过滤空值
+            .filter(s => s) 
             .map(s => ({
                 ...s,
-                // 兼容不同字段名
                 desc: s.desc || s.description || '暂无描述',
-                element: s.element || 'NONE'
+                element: s.element || 'NONE',
+                _isSkill: true,
+                color: '#d4af37',
+                // 🟢 [新增] 标记是否已装备
+                isEquipped: equippedIds.includes(s.id)
             }));
-        }
+        },
     },
     methods: {
         
@@ -619,6 +631,221 @@ export const TeamOverlay = {
             }
         },
 
+        // 🟢 [新增方法 1] 生成技能标签数组
+        getSkillTags(skill) {
+            const tags = [];
+            
+            // 1. 目标标签
+            if (skill.targetType === 'ally') {
+                tags.push({ text: '支援/友方', bg: '#2ecc71', color: '#000' });
+            } else {
+                tags.push({ text: '攻击/敌方', bg: '#ff4444', color: '#fff' });
+            }
+
+            // 2. 攻击类型标签
+            if (skill.atk_type === 'MAGIC') {
+                tags.push({ text: '魔法', bg: '#3498db', color: '#fff' });
+            } else if (skill.atk_type === 'PHYSICAL') {
+                tags.push({ text: '物理', bg: '#e67e22', color: '#fff' });
+            }
+
+            // 3. 属性标签
+            const elName = this.getElementName(skill.element);
+            if (elName && elName !== '无') {
+                // 简单给个深灰背景，文字用属性色(这里简化处理)
+                tags.push({ text: elName + '属性', bg: '#444', color: '#fff' });
+            }
+            
+            return tags;
+        },
+
+        // 🟢 [修复版] 智能威力显示：支持从复合数组中提取治疗或伤害威力
+        getSkillPowerText(skill) {
+            // 1. 提取效果源
+            const rawEffects = skill.effect || {};
+            const effectsList = Array.isArray(rawEffects) ? rawEffects : [rawEffects];
+            
+            // 2. 尝试从复合数组或顶层寻找治疗参数
+            const healEff = effectsList.find(e => e.type === 'HEAL' || e.effect === 'heal') || 
+                           (skill.type === 'HEAL' ? skill : null);
+
+            if (healEff) {
+                const amount = healEff.healAmount || skill.healAmount;
+                const percent = healEff.healPercent || skill.healPercent || (skill.effect === 'heal' ? 0.3 : null);
+                
+                if (amount) return `固定 ${amount}`;
+                if (percent) return `${(percent * 100).toFixed(0)}% HP`;
+                return `30% MaxHP`;
+            }
+
+            // 3. 攻击技能威力 (保持不变)
+            if ((skill.type === 'ATTACK' && skill.power) || (skill.power && skill.power > 0)) {
+                return `${(skill.power * 100).toFixed(0)}%`;
+            }
+
+            return null; 
+        },
+
+        // 🟢 [修改] 混合技能解析器 (支持数组结构 + 特征检测 + 全概率显示)
+        getSkillDetailList(skill) {
+            const list = [];
+            
+            // 1. 归一化：无论 effect 是对象还是数组，统一转为数组处理
+            let rawEffects = skill.effect || {};
+            
+            // 兼容旧的扁平结构
+            if (!skill.effect && (skill.stat || skill.dotType || skill.type === 'STUN' || skill.type === 'DOT')) {
+                rawEffects = skill; 
+            }
+
+            const effectsList = Array.isArray(rawEffects) ? rawEffects : [rawEffects];
+
+            // 2. 遍历所有子效果
+            effectsList.forEach(effect => {
+                if (!effect) return;
+
+                // 🟢 [核心修改] 概率显示逻辑
+                // 1. 获取概率数值 (优先读子项，没有则读父项，都没有则按类型给默认值)
+                let defaultChance = 0.1; // DOT/STUN 默认为 0.1
+                if (effect.stat || (skill.stat && !effect.type)) defaultChance = 1.0; // Stat默认为 1.0
+
+                // 具体的概率值
+                const chanceVal = (effect.chance !== undefined) ? effect.chance : 
+                                  ((skill.chance !== undefined) ? skill.chance : defaultChance);
+                
+                // 2. 生成 HTML 标签
+                // 100% 用绿色，非 100% 用金色
+                const color = chanceVal >= 1.0 ? '#66ff66' : '#ffcc00';
+                const chanceTag = `<span style="color:${color}; font-weight:bold; font-size:0.9em;">[${(chanceVal*100).toFixed(0)}%]</span> `;
+
+                // --- 特征 A: 属性变更 (Buff/Debuff) ---
+                const stat = effect.stat || (skill.effect ? null : skill.stat);
+                
+                if (stat) {
+                    const val = (effect.value !== undefined) ? effect.value : skill.value;
+                    const dur = (effect.duration !== undefined) ? effect.duration : skill.duration;
+                    
+                    if (val !== undefined) {
+                        const valStr = Math.abs(val) < 1 ? `${Math.abs(val * 100).toFixed(0)}%` : Math.abs(val);
+                        
+                        const statMap = { 
+                            atk:'攻击', def_phys:'物防', def_magic:'魔防', speed:'速度', 
+                            critRate:'暴击率', critDamage:'爆伤', dodgeRate:'闪避',
+                            res_phys:'物理抗性', res_magic:'魔法抗性'
+                        };
+                        const name = statMap[stat] || stat;
+                        const durText = dur ? `(${dur}回合)` : '';
+
+                        let isDebuff = false;
+                        let actionText = "提升";
+                        if (stat.startsWith('res_')) {
+                             if (val > 0) { isDebuff = true; actionText = "削弱"; } 
+                             else { isDebuff = false; actionText = "增强"; }
+                        } else {
+                             if (val < 0) { isDebuff = true; actionText = "降低"; }
+                             else { isDebuff = false; actionText = "提升"; }
+                        }
+
+                        list.push({
+                            text: `${chanceTag}${actionText} ${name} ${valStr} ${durText}`,
+                            type: isDebuff ? 'debuff' : 'buff',
+                            icon: isDebuff ? '🔻' : '🔼'
+                        });
+                    }
+                }
+
+                // --- 特征 B: 持续伤害 (DOT) ---
+                const dotType = effect.dotType || (skill.effect ? null : skill.dotType);
+                const isExplicitDot = (effect.type === 'DOT') || (skill.type === 'DOT' && !skill.effect);
+                
+                if (isExplicitDot || dotType || (effect.damage && !effect.stat)) {
+                    const dName = dotType || '持续伤害';
+                    const dmg = effect.damage || skill.damage || '?';
+                    const dur = effect.duration || skill.duration || '?';
+                    
+                    list.push({
+                        text: `${chanceTag}附加 ${dName} (${dmg}点/${dur}回合)`,
+                        type: 'debuff',
+                        icon: '☠️'
+                    });
+                }
+
+                // --- 特征 C: 控制 (Stun) ---
+                const isExplicitStun = (effect.type === 'STUN') || (skill.type === 'STUN' && !skill.effect);
+                
+                if (isExplicitStun) {
+                    const dur = effect.duration || skill.duration || 1;
+                    list.push({
+                        text: `${chanceTag}造成 眩晕 (${dur}回合)`,
+                        type: 'debuff',
+                        icon: '💫'
+                    });
+                }
+
+                // 🟢 [关键修复] 特征 D: 治疗 (HEAL) - 现在正确拼接 chanceTag
+                const isExplicitHeal = (effect.type === 'HEAL') || (effect.effect === 'heal');
+                if (isExplicitHeal) {
+                    let healText = "恢复生命";
+                    if (effect.healAmount) healText += ` ${effect.healAmount}`;
+                    else if (effect.healPercent) healText += ` ${(effect.healPercent*100).toFixed(0)}%`;
+                    else if (effect.value) healText += ` ${(effect.value*100).toFixed(0)}%`;
+                    
+                    list.push({
+                        text: `${chanceTag}${healText}`, // ✅ 现在包含 [100%] 标签
+                        type: 'buff', 
+                        icon: '💚'
+                    });
+                }
+
+            });
+
+            // --- 特征 E: 多段 ---
+            if (skill.isMultiHit) {
+                list.push({ text: `造成 ${skill.hitCount} 次伤害`, type: 'special', icon: '⚔️' });
+            }
+
+            return list;
+        },
+
+        // 🟢 [新增] 请求遗忘技能
+        askForgetSkill(skill) {
+            this.skillToForget = skill;
+            this.showForgetConfirm = true;
+        },
+
+        // 🟢 [新增] 执行遗忘
+        executeForgetSkill() {
+            if (this.skillToForget && this.member) {
+                const name = this.skillToForget.name;
+                // 调用 PlayerState 的后端方法
+                if (this.member.forgetSkill(this.skillToForget.id)) {
+                    addLog(`🗑️ ${this.member.name} 已遗忘技能 [${name}]`, 'system');
+                } else {
+                    addLog(`❌ 遗忘失败`, 'error');
+                }
+            }
+            this.showForgetConfirm = false;
+            this.skillToForget = null;
+        },
+
+        // 🟢 [新增] 处理技能点击或按钮点击
+        toggleSkillEquip(skill) {
+            if (!this.member) return;
+
+            if (skill.isEquipped) {
+                // 如果已装备 -> 卸下
+                this.member.unequipSkill(skill.id);
+            } else {
+                // 如果未装备 -> 尝试装备
+                // 为了体验更好，我们可以先判断一下名字
+                const success = this.member.equipSkill(skill);
+                if (!success && this.member.skills.equipped.length >= 4) {
+                    // 如果是因为满了失败，可以弹个更明显的提示（可选）
+                }
+            }
+            // Vue 的响应式会自动刷新 memberSkills 列表
+        },
+
     },
     template: `
     <div class="team-overlay">
@@ -781,15 +1008,31 @@ export const TeamOverlay = {
                     </div>
 
                     <div v-if="activeTab === 'skills'" class="tab-pane">
-                        <h4 class="pane-title">已习得奥义</h4>
+                        <h4 class="pane-title">个人技能配置 (4/4)</h4>
+                        
                         <div class="skills-grid">
-                            <div v-for="sk in memberSkills" :key="sk.id" class="skill-card-v2">
+                            <div v-for="sk in memberSkills" :key="sk.id" class="skill-card-v2"
+                                :class="{ 'equipped-card': sk.isEquipped }" 
+                                @click="toggleSkillEquip(sk)"
+                                @mouseenter="onHoverItem(sk, $event)"
+                                @mousemove="updateHoverPos($event)"
+                                @mouseleave="onLeaveItem">
+                                
                                 <div class="sk-header">
                                     <span class="sk-name">{{ sk.name }}</span>
+                                    <span v-if="sk.isEquipped" class="equip-badge">已装备</span>
                                     <span class="sk-element" :class="sk.element">{{ sk.element }}</span>
                                 </div>
+                                
                                 <div class="sk-body">{{ sk.desc }}</div>
-                                <div class="sk-footer">MP 消耗: {{ sk.cost.mp }}</div>
+
+                                <div class="sk-footer" style="display:flex; justify-content:flex-end; margin-top:5px;">
+                                    <button class="forget-btn" 
+                                            @click.stop="askForgetSkill(sk)"
+                                            title="遗忘此技能">
+                                        🗑️
+                                    </button>
+                                </div>
                             </div>
                         </div>
                     </div>
@@ -899,9 +1142,48 @@ export const TeamOverlay = {
             <div class="t-header" :style="{ color: hoverItem.color || '#fff' }">
                 {{ hoverItem.name }}
             </div>
-            <div class="t-sub" v-if="hoverItem.type_desc || hoverItem.type">
-                {{ hoverItem.type_desc || (hoverItem.stats ? '装备' : '物品') }}
-            </div>
+
+            <template v-if="hoverItem._isSkill">
+                <div class="t-tags" style="display:flex; gap:5px; margin-bottom:8px;">
+                     <span v-for="(tag, idx) in getSkillTags(hoverItem)" :key="idx"
+                           class="sk-element small" 
+                           :style="{ backgroundColor: tag.bg, color: tag.color }">
+                         {{ tag.text }}
+                     </span>
+                </div>
+                 
+                <div class="t-stats-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px; background:rgba(255,255,255,0.1); padding:5px; border-radius:4px;">
+                     <div>
+                         <span style="color:#66ccff; font-size:11px;">MP消耗:</span> 
+                         <span style="color:#fff; font-weight:bold; margin-left:4px;">{{ hoverItem.cost?.mp || 0 }}</span>
+                     </div>
+                     
+                     <div v-if="getSkillPowerText(hoverItem)">
+                         <span style="color:#ff6666; font-size:11px;">{{ hoverItem.effect === 'heal' ? '治疗' : '威力' }}:</span>
+                         <span style="color:#fff; font-weight:bold; margin-left:4px;">{{ getSkillPowerText(hoverItem) }}</span>
+                     </div>
+                </div>
+
+                <div class="t-effects-list" style="display:flex; flex-direction:column; gap:4px; margin-bottom:8px;">
+                    <div v-for="(detail, idx) in getSkillDetailList(hoverItem)" :key="idx"
+                        class="t-effect-row"
+                        :class="detail.type" 
+                        style="font-size:12px; font-weight:bold; display:flex; align-items:center; gap:4px;">
+                        <span>{{ detail.icon }}</span>
+                        
+                        <span :style="{ color: detail.type === 'buff' ? '#66ff66' : (detail.type === 'debuff' ? '#ff66cc' : '#ffd700') }"
+                            v-html="detail.text">
+                        </span>
+                    </div>
+                </div>
+            </template>
+
+            <template v-else>
+                <div class="t-sub" v-if="hoverItem.type_desc || hoverItem.type">
+                    {{ hoverItem.type_desc || (hoverItem.stats ? '装备' : '物品') }}
+                </div>
+            </template>
+            
             <div class="t-body">
                 {{ hoverItem.desc || hoverItem.description || '暂无描述' }}
             </div>
@@ -1107,6 +1389,26 @@ export const TeamOverlay = {
                 <div class="modal-foot">
                     <button class="rpg-btn small danger" @click="executeDeleteItem">确认丢弃</button>
                     <button class="rpg-btn small" @click="showDeleteItemConfirm = false">取消</button>
+                </div>
+            </div>
+        </div>
+
+        <div v-if="showForgetConfirm" class="modal-mask" style="z-index: 9999;">
+            <div class="confirm-window">
+                <div class="modal-head" style="background:#552200; color:#fff;">遗忘奥义</div>
+                <div class="confirm-body">
+                    要让 <span style="color:var(--mana-blue);">{{ member.name }}</span> 遗忘技能<br>
+                    <span :style="{color: '#d4af37', fontSize:'1.2em', fontWeight:'bold'}">
+                        [{{ skillToForget?.name }}]
+                    </span> 吗？<br><br>
+                    <span style="color:#aaa; font-size:0.9em;">
+                        遗忘后技能将消失，且无法自动恢复。<br>
+                        (除非重新获得技能书)
+                    </span>
+                </div>
+                <div class="modal-foot">
+                    <button class="rpg-btn small danger" @click="executeForgetSkill">确认遗忘</button>
+                    <button class="rpg-btn small" @click="showForgetConfirm = false">取消</button>
                 </div>
             </div>
         </div>

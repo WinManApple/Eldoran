@@ -18,25 +18,23 @@
 
 /* 增加定位和防穿透 */
 .container {
-    /* 🟢 保持原有的布局属性 */
+    /* 🟢 [修改] 基础布局 */
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr;
-    grid-template-rows: auto 1fr auto;
-    gap: 10px;
-    height: 100%; 
+    grid-template-columns: 280px 1fr 280px; /* 两侧固定宽，中间自适应，比 1fr 2fr 1fr 更稳 */
+    grid-template-rows: auto 1fr; /* 头部 auto，中间撑满 */
+    gap: 15px;
     
-    /* 🟢 修改：使用相对单位 padding */
+    /* 🟢 [核心] 高度改为 min-height，允许内容撑开滚动 */
+    min-height: 100vh; 
+    height: auto;
+    
     padding: 2vh 2vw; 
-
-    /* 🟢 核心新增：自适应字体基准 */
-    /* 解释：字体最小12px，首选屏幕高度的1.6%，最大24px。这会让所有 em 单位随屏幕缩放 */
     font-size: clamp(12px, 1.6vh, 24px);
-
-    /* 🟢 保持之前的防穿透设置 (如有) */
     position: relative;
     background-color: #050508;
     pointer-events: auto;
     z-index: 2000;
+    box-sizing: border-box; /* 防止 padding 撑大宽度 */
 }
 
 /* 顶部区域 - 战斗状态 */
@@ -200,10 +198,12 @@
     border-radius: 8px;
     padding: 15px;
     
-    width: 30%;
-    /* 🟢 修改：使用 em 单位，随字体缩放高度 */
-    min-height: 12em; 
+    /* 🟢 [核心] 弹性宽度：最小140px，不够就换行，空间多就拉伸 */
+    flex: 1 1 140px; 
+    min-width: 140px;
+    max-width: 300px; /* 防止在大屏上单个敌人太宽 */
     
+    min-height: 12em; 
     transition: all 0.3s;
     display: flex;
     flex-direction: column;
@@ -548,38 +548,82 @@
     margin-top: 10px;
 }
 
-/* 响应式设计 */
+/* === 响应式设计重构 === */
+
+/* 平板/窄屏 (宽度 < 1024px) */
 @media (max-width: 1024px) {
     .container {
-        grid-template-columns: 1fr;
-        grid-template-rows: auto auto auto auto;
-        height: auto;
+        display: flex;
+        flex-direction: column; /* 垂直堆叠 */
+        height: auto; /* 允许滚动 */
     }
-    
-    .battle-header, .player-team, .battle-area, .action-panel {
-        grid-column: 1;
+
+    /* 头部保持置顶 */
+    .battle-header {
+        order: 1;
+        margin-bottom: 10px;
     }
-    
+
+    /* 敌人区域（视觉重心）放中间 */
     .battle-area {
-        grid-template-rows: auto auto;
+        order: 2;
+        /* 强制日志在敌人下方 */
+        display: flex;
+        flex-direction: column; 
+    }
+
+    /* 玩家队伍放下面 */
+    .player-team {
+        order: 3;
+        /* 变为横向排列玩家，节省垂直空间 */
+        display: flex;
+        flex-direction: row;
+        overflow-x: auto;
+        gap: 10px;
+        padding-bottom: 5px; /* 给滚动条留空 */
     }
     
-    .enemy-card {
-        width: 45%;
+    /* 玩家卡片在横向模式下的调整 */
+    .player-team .player-card {
+        min-width: 200px;
+        margin-bottom: 0;
+        flex-shrink: 0;
+    }
+
+    /* 行动面板放最底 */
+    .action-panel {
+        order: 4;
+        margin-bottom: 50px; /* 底部留白，防止手机手势遮挡 */
     }
 }
 
-@media (max-width: 768px) {
-    .action-grid {
-        grid-template-columns: 1fr;
+/* 手机/超小屏 (宽度 < 600px) */
+@media (max-width: 600px) {
+    .container {
+        padding: 10px; /* 减少边距 */
     }
-    
+
+    .turn-counter {
+        min-width: auto;
+        padding: 5px 15px;
+        font-size: 1em;
+    }
+
+    /* 敌人卡片变小紧凑 */
     .enemy-card {
-        width: 100%;
+        padding: 10px;
+        min-height: 10em;
+        flex-basis: 45%; /* 一行两个 */
+        min-width: 120px;
     }
-    
-    .skill-list, .item-list {
-        grid-template-columns: 1fr;
+
+    .action-grid {
+        grid-template-columns: repeat(3, 1fr); /* 按钮改为3列，更紧凑 */
+    }
+
+    .action-button {
+        padding: 10px 5px;
+        font-size: 0.9em;
     }
 }
 

@@ -19,13 +19,22 @@
 import { store } from './modules/store.js';
 import { useSaveSystem } from './modules/useSaveSystem.js';
 import { useNavigation } from './modules/useNavigation.js'; // 🟢 1. 引入导航模块
+import { useSnapshot } from './modules/useSnapshot.js';
 
 export default {
     name: 'TransitionModal',
     setup() {
         const saveSys = useSaveSystem();
         const { navigateTo } = useNavigation(); // 🟢 2. 获取导航方法
+        const { capture } = useSnapshot(); // 🟢 [新增] 获取捕获方法
         
+        // 🟢 [新增] 存快照操作
+        const takeSnapshot = () => {
+            // 使用当前事件标题作为标签
+            const label = `[事件前] ${store.transition.title || '未知事件'}`;
+            capture(label);
+        };
+
         // 确认操作
         const confirm = () => {
             if (store.transition.onConfirm) {
@@ -49,7 +58,7 @@ export default {
             navigateTo('saves');
         };
 
-        return { store, confirm, openSave };
+        return { store, confirm, openSave, takeSnapshot };
     },
     template: `
     <div v-if="store.transition && store.transition.isActive" class="modal-mask">
@@ -64,6 +73,12 @@ export default {
             </div>
             
             <div class="modal-actions">
+                <button class="cyber-btn secondary" 
+                        style="margin-right: 10px;"
+                        @click="takeSnapshot">
+                    📸 存快照
+                </button>
+
                 <button v-if="store.transition.showSave" 
                         class="cyber-btn secondary" 
                         @click="openSave">

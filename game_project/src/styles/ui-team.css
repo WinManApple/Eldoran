@@ -700,3 +700,118 @@
     white-space: pre-wrap; /* 允许换行 */
     padding-left: 4px;
 }
+
+/* ==========================================
+   13. 技能卡片增强 (Skill Card V2 Enhanced)
+   ========================================== */
+
+/* 确保卡片是定位基准，以便放置遗忘按钮 */
+.skill-card-v2 {
+    position: relative;
+    /* 增加底部内边距，防止文字和按钮重叠 */
+    padding-bottom: 35px; 
+    transition: transform 0.2s, border-color 0.2s;
+}
+
+.skill-card-v2:hover {
+    transform: translateY(-2px);
+    border-color: var(--mana-blue);
+    background: rgba(30, 30, 60, 0.8);
+}
+
+/* 遗忘按钮 (右下角垃圾桶) */
+.forget-btn {
+    position: absolute;
+    bottom: 8px;
+    right: 8px;
+    width: 28px;
+    height: 28px;
+    
+    background: transparent;
+    border: 1px solid transparent;
+    color: #666;
+    font-size: 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    transition: all 0.2s;
+    opacity: 0.6; /* 平时半透明，防误触 */
+}
+
+.forget-btn:hover {
+    opacity: 1;
+    background: rgba(255, 68, 68, 0.15);
+    border-color: #ff4444;
+    color: #ff4444;
+    box-shadow: 0 0 8px rgba(255, 68, 68, 0.3);
+}
+
+/* ==========================================
+   14. 增强版 Tooltip 样式 (Modular Tooltip)
+   ========================================== */
+
+/* 技能标签容器 */
+.t-tags {
+    margin-top: 4px;
+}
+
+/* 技能小标签 (复用 sk-element 但尺寸更小) */
+.sk-element.small {
+    padding: 1px 6px;
+    border-radius: 3px;
+    font-size: 10px;
+    font-weight: bold;
+    text-transform: uppercase;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.5);
+    letter-spacing: 0.5px;
+}
+
+/* 核心数值网格 (MP/威力) */
+.t-stats-grid {
+    border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+/* 特效列表容器 */
+.t-effects-list {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 6px;
+    border-radius: 4px;
+    border-left: 2px solid #888;
+}
+
+/* 单行特效 */
+.t-effect-row {
+    line-height: 1.4;
+    text-shadow: 0 1px 2px black;
+}
+
+/* 根据类型定义颜色 (对应 JS 中的 type) */
+/* Buff (绿色系) */
+.t-effect-row.buff {
+    color: #66ff66; 
+}
+/* Debuff (紫红系) */
+.t-effect-row.debuff {
+    color: #ff66cc;
+}
+/* Special (金色系) */
+.t-effect-row.special {
+    color: #ffd700;
+}
+
+.equipped-card {
+    border: 1px solid #ffd700; /* 金色边框 */
+    background: rgba(255, 215, 0, 0.1);
+}
+.equip-badge {
+    background: #ffd700;
+    color: #000;
+    font-size: 10px;
+    padding: 2px 4px;
+    border-radius: 4px;
+    margin-left: 5px;
+    font-weight: bold;
+}

@@ -63,7 +63,7 @@ export default {
 
     // 🟢 模板：使用 fixed 定位与 v-if 按钮，确保绝对安全
     template: `
-    <div class="combat-overlay-root" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: #0a0a12; pointer-events: auto;">
+    <div class="combat-overlay-root" style="position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: 9999; background-color: #0a0a12; pointer-events: auto; overflow-y: auto; -webkit-overflow-scrolling: touch;">
         
         <div class="container">
             <div class="battle-header">

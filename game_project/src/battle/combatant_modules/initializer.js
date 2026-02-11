@@ -83,32 +83,49 @@ function setupFromModel(actor, model, runtimeId) {
     actor.critDamage = 1 + s.final_crit_dmg; // 对应 critDamage (倍率)
     actor.dodgeRate = s.final_dodge;
 
-    // 映射最终抗性 (百分比修正)
-    actor.res_phys = s.final_res_phys;       // 对应 res_phys
-    actor.res_magic = s.final_res_magic;     // 对应 res_magic
+    // 🟢 [核心修复] 备份基础抗性，防止被 stats.js 的重置逻辑抹除
+    actor.base_res_phys = s.final_res_phys || 0;
+    actor.base_res_magic = s.final_res_magic || 0;
 
-    // 技能与描述初始化
-    actor.skills = (model.skills.equipped || []).map(skillId => {
-        // 1. 如果本身就是对象 (防止重复处理)，直接返回
-        if (typeof skillId === 'object') return skillId;
+    // 🟢 [核心修复] 抗性初始化 (倒数模型)
+    // 必须确保基准值为 1.0，否则后续除法公式会出错
+    // 从 PlayerState 计算好的 final_res 直接传递过来
+    actor.base_res_phys = s.final_res_phys || 1.0;
+    actor.base_res_magic = s.final_res_magic || 1.0;
 
-        // 2. 尝试从 learned (已习得列表) 中查找对应的完整数据
-        // learned 列表里可能是 String (静态技能) 也可能是 Object (动态技能)
-        const originalData = (model.skills.learned || []).find(s => {
-            const sId = (typeof s === 'object') ? s.id : s;
-            return sId === skillId;
-        });
+    // 初始化运行时抗性
+    actor.res_phys = actor.base_res_phys;
+    actor.res_magic = actor.base_res_magic;
 
-        // 3. 决策逻辑
-        // 如果在 learned 里找到了，并且它是一个对象（说明是动态技能），则使用该对象
-        // 这样 BattleRenderer 就能识别它是对象，从而直接渲染，不再查库
-        if (originalData && typeof originalData === 'object') {
-            return originalData;
+    // 🟢 [核心修复] 技能初始化：强制深拷贝，剥离 Vue Proxy
+    actor.skills = (model.skills.equipped || []).map(skillOrId => {
+        // 1. 确定数据源：如果是 ID，先去 learned 里找找有没有对应的动态对象
+        let sourceData = skillOrId;
+        
+        if (typeof skillOrId === 'string') {
+            const found = (model.skills.learned || []).find(s => {
+                const sId = (typeof s === 'object') ? s.id : s;
+                return sId === skillOrId;
+            });
+            // 如果在已习得列表里找到了对象版本，就用对象版本
+            if (found) sourceData = found;
         }
 
-        // 否则保持原样（它是静态技能 ID，让 Renderer 去查 GameDatabase）
-        return skillId;
+        // 2. 深拷贝处理 (Deep Copy)
+        // 只有当它是对象时才需要拷贝；如果是字符串 ID 则直接返回
+        if (typeof sourceData === 'object' && sourceData !== null) {
+            try {
+                // 彻底断开引用，确保战斗内是一个纯净的 JS 对象
+                return JSON.parse(JSON.stringify(sourceData));
+            } catch (e) {
+                console.warn("[Initializer] 技能深拷贝失败，将使用原始引用:", sourceData);
+                return sourceData;
+            }
+        }
+
+        return sourceData;
     });
+
     actor.rewards = { exp: 0, gold: 0, items: [] };
     actor.description = "一位无畏的冒险者。";
     actor.initRuntimeState(); 
@@ -150,12 +167,31 @@ function setupLegacy(actor, id, name, type, hp, mp, attack, defense, level, elem
     actor.critDamage = store.config.battle.RNG.critDamageMultiplier; 
     actor.dodgeRate = store.config.battle.RNG.baseDodgeRate;
 
-    // 🟢 3. 抗性初始化 (对应 res_phys/magic)
-    actor.res_phys = res_phys !== null ? res_phys : (isPlayer ? 0.0 : 0.0); // 默认0修正(100%承伤)
-    actor.res_magic = res_magic !== null ? res_magic : (isPlayer ? 0.0 : 0.0);
+    // 🟢 [重构] 敌人抗性初始化逻辑
+    // 1. 获取全局平衡常数 K
+    const K = store.config.battle.Mechanics.defenseBalanceFactor || 1000;
+    const safeDef = Math.max(0, defense || 0);
+
+    // 2. 计算防御力提供的抗性转化值 (0.0 ~ 1.0)
+    const defContribution = safeDef / (safeDef + K);
+
+    // 3. 计算初始抗性值 (1.0 基准 + 防御转化 + 外部修正)
+    // 这里的 res_phys/magic 此时应作为“修正值”加算
+    actor.base_res_phys = 1.0 + defContribution + (res_phys || 0);
+    actor.base_res_magic = 1.0 + defContribution + (res_magic || 0);
+
+    // 同步到运行时属性
+    actor.res_phys = actor.base_res_phys;
+    actor.res_magic = actor.base_res_magic;
 
     actor.rewards = rewards || { exp: 0, gold: 0, items: [] };
     actor.description = description || "一个神秘的敌人。";
-    actor.skills = skills || [];
+    // 🟢 [优化] 敌人技能也进行深拷贝安全处理
+    actor.skills = (skills || []).map(s => {
+        if (typeof s === 'object' && s !== null) {
+            return JSON.parse(JSON.stringify(s));
+        }
+        return s;
+    });
     actor.initRuntimeState();
 }

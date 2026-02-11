@@ -27,6 +27,7 @@ import { HState } from '../../systems/HInteractionSystem/H_State.js';
 import { ChatData } from '../../ui/modules/ChatData.js'; 
 import { Party_Memory } from '../memory/Party_Memory.js';
 import { NodeType, NodeState } from '../../map/MapData.js';
+import { useSnapshot } from '../../ui/modules/useSnapshot.js';
 
 // 定义异步函数构造器，用于动态执行脚本
 const AsyncFunction = Object.getPrototypeOf(async function(){}).constructor;
@@ -50,22 +51,24 @@ export const Action_LLM = {
 
         console.group("[Action_LLM] ⚡ 开始执行脚本指令");
 
+        // 🟢 [新增] 获取快照控制器
+        const { initBaseline, clearBaseline } = useSnapshot();
+
+        // 🟢 [Step 1] 在任何副作用发生前，冻结当前纯净状态
+        initBaseline(scriptContent);
+
         try {
+            // ... (原有的构建和执行逻辑保持不变) ...
             // 1. 构建沙盒环境 (Sandbox)
-            // 将所有注册的指令作为局部变量注入，使脚本可以直接调用 start_H(...) 而非 this.registry.start_H
             const scope = this.commandRegistry;
             const argNames = Object.keys(scope);
             const argValues = Object.values(scope);
-            const start_combat = this.commandRegistry.start_combat;
             
             // 2. 动态构建异步函数
-            // 函数体: "return (async () => { ...scriptContent... })()" 的逻辑
             const dynamicFn = new AsyncFunction(...argNames, scriptContent);
 
             // 3. 执行脚本
             console.log("📜 执行脚本片段:", scriptContent);
-            
-            // 传入具体的 API 实现
             await dynamicFn(...argValues);
             
             addLog(`⚙️ 系统指令执行完毕`);
@@ -74,6 +77,10 @@ export const Action_LLM = {
             console.error("❌ [Action_LLM] 脚本执行异常:", e);
             console.error("Script Content:", scriptContent);
             addLog(`⚠️ 指令执行出错: ${e.message}`);
+        } finally {
+            // 🟢 [Step 2] 脚本彻底结束（包括 await 完成或报错），清理基准
+            // 这确保了如果玩家没有回溯而是正常玩下去，旧的基准不会污染后续的快照
+            clearBaseline();
         }
 
         console.groupEnd();
@@ -591,7 +598,7 @@ export const Action_LLM = {
             store.transition = {
                 isActive: true,
                 title: `即将进入${type}`,
-                message: "前方将发生重大事件，建议立即存档。",
+                message: "前方将发生事件，建议进行快照。",
                 showSave: true,   // 允许存档
                 canCancel: false, // 禁止取消 (只能确认)
                 

@@ -19,7 +19,6 @@
 // src/systems/PlayerState.js
 import { GameDatabase } from '../config/GameDatabase.js';
 import { store, addLog } from '../ui/modules/store.js';
-import { BattleConfig } from '../battle/BattleConfig.js';
 
 /**
  * 玩家状态模型 (Runtime Model) - v3.0 重构版
@@ -248,22 +247,26 @@ export class CharacterModel {
         if (this.hp > this.maxHp) this.hp = this.maxHp;
         if (this.mp > this.maxMp) this.mp = this.maxMp;
 
-        // --- Step 5: 计算最终耐受倍率 (Resistance) ---
-        // 公式: 伤害减免 = 防御 / (防御 + K)
-        // 设定平衡系数 K = 100 (防御力100时减伤50%)
-        const K = BattleConfig.Mechanics.defenseBalanceFactor || 100;
-
-        // 物理减免率
-        const reducePhys = s.final_def_phys / (Math.max(0, s.final_def_phys) + K);
-        // 魔法减免率
-        const reduceMagic = s.final_def_magic / (Math.max(0, s.final_def_magic) + K);
-
-        // 最终耐受 = (基础耐受 + 装备修正) * (1 - 减免率)
-        // 限制最小耐受为 0.1 (最高 90% 减伤)
-        s.final_res_phys = Math.max(0.1, (b.res_phys + modResPhys) * (1 - reducePhys));
-        s.final_res_magic = Math.max(0.1, (b.res_magic + modResMagic) * (1 - reduceMagic));
+        // --- Step 5: 计算最终抗性值 (Resistance Value) ---
+        // 🟢 [重构] 采用倒数缩放模型
+        // 逻辑：抗性值 = 基础(1.0) + 装备修正 + 防御力转化值
+        // 战斗公式预期：最终伤害 = 原始伤害 / 抗性值
         
-        // console.log("[PlayerState] 属性已重算:", this.combatStats);
+        const K = store.config.battle.Mechanics.defenseBalanceFactor || 1000;
+
+        // 1. 计算防御力转化值 (Range: 0.0 ~ 1.0)
+        const defContributionPhys = s.final_def_phys / (Math.max(0, s.final_def_phys) + K);
+        const defContributionMagic = s.final_def_magic / (Math.max(0, s.final_def_magic) + K);
+
+        // 2. 累加计算最终抗性 (Final Resistance)
+        // b.res_phys 默认为 1.0
+        // modResPhys 为装备直接提供的抗性 (如 +0.1)
+        s.final_res_phys = Math.max(0.1, b.res_phys + modResPhys + defContributionPhys);
+        s.final_res_magic = Math.max(0.1, b.res_magic + modResMagic + defContributionMagic);
+        
+        // 结果示例：
+        // 基础1.0 + 装备0.2 + 防御0.5 = 1.7
+        // 此时伤害倍率 = 1 / 1.7 ≈ 0.58 (即减伤约42%)
     }
 
     /**
@@ -393,6 +396,40 @@ export class CharacterModel {
              this.skills.equipped.push(id);
         }
         
+        return true;
+    }
+
+    /**
+     * 🟢 [新增] 遗忘技能
+     * @param {String|Object} skillOrId - 技能 ID 或对象
+     * @returns {Boolean} 是否遗忘成功
+     */
+    forgetSkill(skillOrId) {
+        const targetId = (typeof skillOrId === 'object') ? skillOrId.id : skillOrId;
+
+        // 1. 在已习得列表中查找索引
+        const index = this.skills.learned.findIndex(s => {
+            const sId = (typeof s === 'object') ? s.id : s;
+            return sId === targetId;
+        });
+
+        if (index === -1) {
+            console.warn(`[PlayerState] 无法遗忘：角色未习得技能 ${targetId}`);
+            return false;
+        }
+
+        // 2. 从 learned 列表中移除
+        const removedSkill = this.skills.learned.splice(index, 1)[0];
+        const skillName = (typeof removedSkill === 'object') ? removedSkill.name : targetId;
+
+        // 3. 检查并清理已装备栏位 (Equipped Slots)
+        // 如果该技能正在被装备，必须卸下，否则战斗系统会报错
+        const equipIndex = this.skills.equipped.indexOf(targetId);
+        if (equipIndex !== -1) {
+            this.skills.equipped.splice(equipIndex, 1);
+        }
+
+        // console.log(`[PlayerState] 已遗忘技能: ${skillName}`);
         return true;
     }
 
@@ -687,4 +724,49 @@ export class CharacterModel {
             status_effects: [...this.buffs]
         };
     }
+
+    /**
+     * 🟢 [新增] 手动装备技能
+     */
+    equipSkill(skillOrId) {
+        const id = (typeof skillOrId === 'object') ? skillOrId.id : skillOrId;
+        
+        // 1. 检查是否已习得
+        if (!this.hasSkill(id)) {
+            console.warn("未习得该技能，无法装备");
+            return false;
+        }
+
+        // 2. 检查是否已装备
+        if (this.skills.equipped.includes(id)) {
+            console.warn("该技能已在装备栏中");
+            return false;
+        }
+
+        // 3. 检查槽位是否已满 (最大4个)
+        if (this.skills.equipped.length >= 4) {
+            addLog("技能槽位已满 (4/4)，请先卸下其他技能", "system");
+            return false;
+        }
+
+        this.skills.equipped.push(id);
+        addLog(`技能 [${id}] 已装备`, "system"); // 建议传入 skillName 以显示中文名
+        return true;
+    }
+
+    /**
+     * 🟢 [新增] 手动卸下技能
+     */
+    unequipSkill(skillOrId) {
+        const id = (typeof skillOrId === 'object') ? skillOrId.id : skillOrId;
+        const index = this.skills.equipped.indexOf(id);
+
+        if (index !== -1) {
+            this.skills.equipped.splice(index, 1);
+            addLog(`技能已卸下`, "system");
+            return true;
+        }
+        return false;
+    }
+
 }

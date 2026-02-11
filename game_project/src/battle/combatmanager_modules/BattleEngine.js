@@ -152,9 +152,46 @@ export async function processCommand(manager, cmd) {
 
     if (cmd.type === 'attack' || cmd.type === 'skill') {
         if (!target || target.hp <= 0) {
-            const potentialTargets = manager.state.actors.filter(a => a.isPlayer !== actor.isPlayer && a.hp > 0);
-            if (potentialTargets.length > 0) target = potentialTargets[0];
-            else return;
+            // 1. 判断原本的意图是“有益(找队友)”还是“有害(找敌人)”
+            let isFriendlyAction = false;
+
+            if (cmd.type === 'skill') {
+                // 安全获取技能数据（支持 ID 字符串或动态对象）
+                const skillData = cmd.skillData;
+                const skill = (typeof skillData === 'object') 
+                    ? skillData 
+                    : GameDatabase.Skills[skillData];
+
+                // 如果是针对盟友的技能（治疗/Buff），标记为友好动作
+                if (skill && skill.targetType === 'ally') {
+                    isFriendlyAction = true;
+                }
+            }
+
+            // 2. 根据意图筛选合法的存活目标
+            const potentialTargets = manager.state.actors.filter(a => {
+                const isAlive = a.hp > 0;
+                // 判断阵营关系
+                const isSameFaction = (a.isPlayer === actor.isPlayer);
+                
+                // 如果是友好动作，找同阵营活人；如果是攻击，找敌对阵营活人
+                return isAlive && (isFriendlyAction ? isSameFaction : !isSameFaction);
+            });
+
+            // 3. 执行重定向
+            if (potentialTargets.length > 0) {
+                // 随机选择一个新目标
+                target = potentialTargets[Math.floor(Math.random() * potentialTargets.length)];
+                
+                // 更新指令中的 targetId，保持数据一致性
+                cmd.targetId = target.id;
+                
+                manager.addLogEntry(`${actor.name} 原定目标已倒下，转而对 ${target.name} 行动`, 'system');
+            } else {
+                // 场上没有符合条件的目标了
+                manager.addLogEntry(`${actor.name} 茫然地停下了动作（失去目标）`, 'system');
+                return;
+            }
         }
     }
 
@@ -169,14 +206,9 @@ export async function processCommand(manager, cmd) {
         const actualMpCost = Math.floor(baseMpCost * store.config.battle.Mechanics.mpCostMultiplier);
         if (actualMpCost > 0) actor.mp = Math.max(0, actor.mp - actualMpCost);
 
-        if (skill.effect === 'heal') {
-            const amt = skill.healAmount || Math.floor(target.maxHp * 0.3);
-            target.hp = Math.min(target.maxHp, target.hp + amt);
-            manager.addLogEntry(`${actor.name} 治疗 ${target.name} +${amt} HP`, 'heal');
-        } else {
-            const result = actor.attackTarget(target, skill);
-            handleCombatResult(manager, actor, target, result, skill);
-        }
+        const result = actor.attackTarget(target, skill);
+        handleCombatResult(manager, actor, target, result, skill);
+
     } 
     else if (cmd.type === 'defend') {
         actor.isDefending = true;
@@ -299,6 +331,7 @@ export function generateEnemyCommand(manager, enemy) {
 
 /**
  * 5. 战斗结果反馈
+ * 🟢 [修复] 修正了特效触发位置和重复统计问题
  */
 function handleCombatResult(manager, actor, target, result, skill = null) {
     if (result.dodged) {
@@ -306,45 +339,64 @@ function handleCombatResult(manager, actor, target, result, skill = null) {
         return;
     }
 
-    const skillName = skill ? skill.name : "普通攻击";
-    let logType = 'damage';
-    // 基础日志文本
-    let logMessage = `${actor.name} ${skillName} 命中 ${target.name}，造成 ${result.damage} 伤害`;
+    if (result.damage > 0) {
+        const skillName = skill ? skill.name : "普通攻击";
+        let logType = 'damage';
+        let logMessage = `${actor.name} ${skillName} 命中 ${target.name}，造成 ${result.damage} 伤害`;
 
-    // 🟢 1. 处理属性克制 (红色说明)
-    if (result.isAdvantage) {
-        logMessage += ` <span style="color: #ff4444; font-weight: bold;">(克制!)</span>`;
-    }
+        if (result.isAdvantage) {
+            logMessage += ` <span style="color: #ff4444; font-weight: bold;">(克制!)</span>`;
+        }
 
-    // 🟢 2. 处理暴击 (金色说明)
-    if (result.critical) {
-        logMessage += ` <span style="color: #ffcc00; font-weight: bold;">(暴击!!)</span>`;
-        logType = 'critical'; // 设置为暴击类型，可配合 CSS 播放额外特效
-    }
+        if (result.critical) {
+            logMessage += ` <span style="color: #ffcc00; font-weight: bold;">(暴击!!)</span>`;
+            logType = 'critical';
+        }
 
-    logMessage += "！";
+        logMessage += "！";
+        manager.addLogEntry(logMessage, logType);
+        
+        // 统计数据累加 (仅在有伤害时)
+        if (actor.isPlayer) manager.state.totalDamageDealt += result.damage;
+        else manager.state.totalDamageTaken += result.damage;
 
-    // 发送最终组装的日志
-    manager.addLogEntry(logMessage, logType);
-    
-    // --- 🟢 核心新增：状态应用日志 ---
-    if (result.effectSuccess && skill) {
-        if (skill.type === 'STUN') {
-            manager.addLogEntry(` <span style="color: #ffcc00;">[效果]</span> ${target.name} 陷入了 眩晕！`, 'system');
-        } else if (skill.type === 'DOT') {
-            const dotName = skill.effect.dotType || '持续伤害';
-            manager.addLogEntry(` <span style="color: #2ecc71;">[效果]</span> ${target.name} 感染了 ${dotName}！`, 'system');
-        } else if (skill.type === 'ACTIVE_BUFF') {
-            manager.addLogEntry(` <span style="color: #3498db;">[效果]</span> ${target.name} 获得状态提升！`, 'buff');
+        // 🟢 [修复] 正确位置：仅在造成实质伤害时，触发受击震动特效
+        // 必须放在 damage > 0 的判断块内部！
+        if (typeof manager.triggerShakeEffect === 'function') {
+            manager.triggerShakeEffect(target.id);
         }
     }
-
-    // 触发视觉特效
-    if (typeof manager.triggerShakeEffect === 'function') manager.triggerShakeEffect(target.id);
     
-    // 统计数据累加
-    if (actor.isPlayer) manager.state.totalDamageDealt += result.damage;
-    else manager.state.totalDamageTaken += result.damage;
+    // --- 状态应用日志 (支持复合技能) ---
+    if (result.effectDetails && result.effectDetails.length > 0) {
+        
+        result.effectDetails.forEach(outcome => {
+            // 1. 如果生效了
+            if (outcome.isSuccess) {
+                if (outcome.type === 'STUN') {
+                    manager.addLogEntry(` <span style="color: #ffcc00;">[效果]</span> ${target.name} 陷入了 眩晕！`, 'system');
+                } 
+                else if (outcome.type === 'DOT') {
+                    manager.addLogEntry(` <span style="color: #2ecc71;">[效果]</span> ${target.name} 感染了 ${outcome.name}！`, 'system');
+                } 
+                else if (outcome.type === 'BUFF') {
+                    if (outcome.name === '属性削弱') {
+                        manager.addLogEntry(` <span style="color: #aa66cc;">[效果]</span> ${target.name} ${outcome.name}！`, 'buff');
+                    } else {
+                        manager.addLogEntry(` <span style="color: #3498db;">[效果]</span> ${target.name} ${outcome.name}！`, 'buff');
+                    }
+                }
+                else if (outcome.type === 'HEAL') {
+                    manager.addLogEntry(` <span style="color: #44ff44;">[治疗]</span> ${target.name} 恢复了 ${outcome.value} 点生命`, 'heal');
+                }
+            } 
+            // 2. 如果失败了 (概率未命中)
+            else {
+                // 使用灰色或暗淡颜色表示失效
+                manager.addLogEntry(` <span style="color: #888;">[抵抗]</span> ${target.name} 抵抗了 ${outcome.name}效果`, 'system');
+            }
+        });
+    }
 }
 
 /**
@@ -354,6 +406,8 @@ async function endTurnPhase(manager) {
     manager.state.turn++;
     manager.addLogEntry(`=== 第 ${manager.state.turn} 回合 ===`, 'system');
     
+    let anyDotDamage = false; // 用于标记是否有DOT发生，可选
+
     manager.state.actors.forEach(actor => {
         if (actor.hp > 0) {
             // 🟢 结算 DOT 并获取伤害数值
@@ -362,13 +416,27 @@ async function endTurnPhase(manager) {
             // 🟢 如果有伤害，打印日志
             if (dotDamage > 0) {
                 manager.addLogEntry(` ${actor.name} 受到持续伤害 -${dotDamage} HP`, 'damage');
+                anyDotDamage = true;
+                
+                // 建议：可以在这里触发一下受击震动，视觉效果更好
+                if (typeof manager.triggerShakeEffect === 'function') {
+                    manager.triggerShakeEffect(actor.id);
+                }
             }
             
             actor.isDefending = false;
         }
     });
+
+    // ✅ [核心修复] 立即刷新 UI，让血条在进入下一回合的等待前就发生变化
+    if (typeof manager.updateCharacterUI === 'function') {
+        manager.updateCharacterUI();
+    }
     
     manager.state.fleeFailed = false;
+    
+    // 这里的 waitTime 是回合间的停顿，现在血条会在这个停顿*之前*就更新
     await sleep(waitTime);
+    
     manager.startInputPhase();
 }

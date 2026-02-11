@@ -44,7 +44,7 @@ export const BattleConfig = {
         baseFleeChance: 0.2,            // 基础逃跑成功率
         elementalAdvantage: 1.5,        // 属性克制倍率 (例如: 火打木)
         elementalDisadvantage: 1.0,     // 属性被克制倍率 (例如: 火打水)
-        defenseBalanceFactor: 100,      // 防御公式常数 K: 减伤 = Def / (Def + K)
+        defenseBalanceFactor: 1000,      // 防御公式常数 K: 减伤 = Def / (Def + K)
         speedLevelWeight: 0.2,          // 等级对速度的影响系数
         mpCostMultiplier: 1.0,          // 蓝耗倍率
     },

@@ -88,59 +88,120 @@ export function updateEffects(actor) {
 
 /**
  * 将技能/物品的 effectData 转化为具体的战斗状态
- * 🟢 支持动态解析：即使是数据库未定义的属性，只要符合格式即可转换
+ * 🟢 [重构] 返回详细的执行结果数组，用于精准日志显示
+ * @returns {Object} { anySuccess: Boolean, outcomes: Array }
  */
 export function applySkillEffect(actor, effectData, target) {
-    if (!effectData) return false;
+    // 统一返回结构
+    let result = {
+        anySuccess: false,
+        outcomes: [] // 结构: { type: 'BUFF'|'DOT'|'STUN', name: string, isSuccess: boolean }
+    };
+
+    if (!effectData) return result;
+
+    // 1. 递归处理数组
+    if (Array.isArray(effectData)) {
+        effectData.forEach(subEffect => {
+            const subRes = applySkillEffect(actor, subEffect, target);
+            if (subRes.anySuccess) result.anySuccess = true;
+            result.outcomes = result.outcomes.concat(subRes.outcomes);
+        });
+        return result;
+    }
+
+    // 2. 单个效果处理
+    
+    // 获取概率 (默认 0.1 / 10%)
+    // 注意：如果是属性Buff(stat)，通常默认是 1.0 (100%)，除非显式定义了 chance
+    let defaultChance = 0.1; 
+    if (effectData.stat) defaultChance = 1.0; // Buff 类默认必中
+
+    const chance = (effectData.chance !== undefined) ? effectData.chance : defaultChance;
+    const roll = Math.random();
+    const isSuccess = roll < chance;
 
     // A. 属性修改类 (Stat Buffs)
     if (effectData.stat) {
-        // 直接使用属性字典的 Key，不再重命名
-        // 允许的 Key: 'atk', 'def_phys', 'def_magic', 'speed', 'critRate', 'dodgeRate' 等
+        if (isSuccess) {
+            applyBuff(target, { 
+                type: effectData.stat, 
+                value: effectData.value, 
+                duration: effectData.duration, 
+                level: effectData.level || 1 
+            });
+            result.anySuccess = true;
+        }
         
-        applyBuff(actor, { 
-            type: effectData.stat, // 直接透传 Key
-            value: effectData.value, 
-            duration: effectData.duration, 
-            level: effectData.level || 1 
+        // 记录战报
+        result.outcomes.push({
+            type: 'BUFF',
+            name: effectData.value < 0 || (effectData.stat||'').startsWith('res_') ? '属性削弱' : '状态提升',
+            isSuccess: isSuccess,
+            detail: effectData.stat // 供日志细化使用
         });
-        return true;
     }
-    // B. 状态异常类 (如眩晕) 🟢 注入概率逻辑
-    else if (effectData.type === 'STUN' || (effectData.duration && !effectData.stat)) {
-        // 1. 确定生效概率：如果定义了 chance 则使用，否则默认为 0.1 (10%)
-        const successChance = (effectData.chance !== undefined) ? effectData.chance : 0.1;
 
-        // 2. 进行随机判定
-        if (Math.random() < successChance) {
+    // B. 状态异常类 (眩晕)
+    else if (effectData.type === 'STUN' || (effectData.duration && !effectData.stat && !effectData.damage && !effectData.dotType)) {
+        if (isSuccess) {
             target.isStunned = true;
-            target.debuffs.push({ 
-                type: 'stun', 
-                duration: effectData.duration || 1 
-            });
-            return true;
-        } else {
-            return false;
+            target.debuffs.push({ type: 'stun', duration: effectData.duration || 1 });
+            result.anySuccess = true;
         }
+        result.outcomes.push({
+            type: 'STUN',
+            name: '眩晕',
+            isSuccess: isSuccess
+        });
     }
-    // 🟢  C. 持续伤害类 (DOT)
-    // 逻辑：识别包含 damage 字段且没有 stat 字段的效果
-    else if (effectData.damage && !effectData.stat) {
-        // 1. 确定概率：使用定义值，否则默认为 10% (0.1)
-        const successChance = (effectData.chance !== undefined) ? effectData.chance : 0.1;
 
-        // 2. 概率判定
-        if (Math.random() < successChance) {
-            // 3. 注入到目标的 dots 数组中
-            // 战斗引擎 updateEffects 每回合会自动结算这里的数值
+    // C. 持续伤害类 (DOT)
+    else if (effectData.damage || effectData.dotType || effectData.type === 'DOT') {
+        const dotName = effectData.dotType || '持续伤害';
+        if (isSuccess) {
             target.dots.push({
-                dotType: effectData.dotType || '未知', // 用于 UI 显示
-                damage: effectData.damage || 0,       // 每回合扣血量
-                duration: effectData.duration || 1     // 持续回合
+                dotType: dotName,
+                damage: effectData.damage || 0,
+                duration: effectData.duration || 3
             });
-            return true;
-        } else {
-            return false;
+            result.anySuccess = true;
+        }
+        result.outcomes.push({
+            type: 'DOT',
+            name: dotName,
+            isSuccess: isSuccess
+        });
+    }
+
+    // 🟢 [新增] D. 治疗类 (HEAL)
+    // 识别条件: type='HEAL' 或 effect='heal' (兼容旧写法)
+    else if (effectData.type === 'HEAL' || effectData.effect === 'heal') {
+        let amt = 0;
+        
+        // 计算治疗量
+        if (effectData.healAmount) {
+            amt = effectData.healAmount; // 固定数值
+        } 
+        else if (effectData.healPercent || effectData.value) {
+            // 百分比 (优先用 healPercent, 兼容 value)
+            const pct = effectData.healPercent || effectData.value;
+            amt = Math.floor(target.maxHp * pct);
+        }
+
+        if (amt > 0) {
+            const oldHp = target.hp;
+            target.hp = Math.min(target.maxHp, target.hp + amt);
+            const realHeal = target.hp - oldHp;
+            
+            result.anySuccess = true;
+            result.outcomes.push({
+                type: 'HEAL',
+                value: realHeal,
+                isSuccess: true
+            });
         }
     }
+
+    return result;
 }

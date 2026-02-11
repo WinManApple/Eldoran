@@ -31,7 +31,11 @@ export function updateStats(actor) {
     actor.atk = actor.base_atk;
     actor.def_phys = actor.base_def_phys;
     actor.def_magic = actor.base_def_magic;
-    
+    // 🟢 [新增] 必须先重置抗性，否则后续的 += 会变成 NaN
+    // 如果角色模型里有 base_res_phys 就用，没有就默认为 0
+    // 🟢 确保从备份的基础值进行重置
+    actor.res_phys = (actor.base_res_phys !== undefined) ? actor.base_res_phys : 0;
+    actor.res_magic = (actor.base_res_magic !== undefined) ? actor.base_res_magic : 0;
     // 如果没有绑定模型，这些高级属性也需要重置回基础值
     if (!actor.sourceModel) {
         actor.critRate = actor.baseCritRate;
